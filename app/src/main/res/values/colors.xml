@@ -13,4 +13,6 @@
     <color name="material_800_red">#FFC62828</color>
     <color name="material_800_blue_50pct">#801565C0</color>
     <color name="material_800_red_50pct">#80C62828</color>
+    <color name="holiday">#FFDF8084</color>
+    <color name="user_schedule">#FF71C4E6</color>
 </resources>
