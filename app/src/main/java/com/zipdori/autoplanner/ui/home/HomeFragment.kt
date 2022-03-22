@@ -11,7 +11,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.toyproject.testproject3_zipdori.ui.home.CalendarAdapter
+import com.zipdori.autoplanner.MainActivity
 import com.zipdori.autoplanner.R
+import com.zipdori.autoplanner.database.AutoPlannerModule
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
 import java.text.SimpleDateFormat
 import java.util.*
@@ -37,6 +39,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var fabClose: Animation
 
     private var isFabOpen = false
+
+    private lateinit var autoPlannerModule: AutoPlannerModule
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -93,12 +97,19 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabText.setOnClickListener(this)
         fabAdd.setOnClickListener(this)
 
+        autoPlannerModule = AutoPlannerModule(context)
+
         return root
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.fragment_home, menu)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        (activity as MainActivity).supportActionBar?.title = ""
     }
 
     override fun onDestroyView() {
