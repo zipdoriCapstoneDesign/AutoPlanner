@@ -9,13 +9,17 @@
         android:id="@+id/nav_home"
         android:name="com.zipdori.autoplanner.ui.home.HomeFragment"
         android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home" />
+        tools:layout="@layout/fragment_home" >
+        <action
+            android:id="@+id/action_nav_home_to_nav_text_input"
+            app:destination="@id/nav_text_input" />
+    </fragment>
 
     <fragment
-        android:id="@+id/nav_gallery"
-        android:name="com.zipdori.autoplanner.ui.gallery.GalleryFragment"
-        android:label="@string/menu_gallery"
-        tools:layout="@layout/fragment_gallery" />
+        android:id="@+id/nav_text_input"
+        android:name="com.zipdori.autoplanner.ui.textinput.TextInputFragment"
+        android:label="@string/menu_text_input"
+        tools:layout="@layout/fragment_text_input" />
 
     <fragment
         android:id="@+id/nav_slideshow"

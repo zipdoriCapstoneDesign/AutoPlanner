@@ -14,10 +14,13 @@ class AutoPlannerDBHelper(
     override fun onCreate(db: SQLiteDatabase?) {
         val sql: String = "CREATE TABLE IF NOT EXISTS schedule (" +
                 "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "start_time TIMESTAMP, " +
-                "end_time TIMESTAMP, " +
-                "title STRING, " +
-                "notes STRING);"
+                "start_time TEXT NOT NULL, " +
+                "end_time TEXT NOT NULL, " +
+                "title TEXT, " +
+                "notes TEXT, " +
+                "photo TEXT, " +
+                "lat REAL, " +
+                "lng REAL);"
 
         db?.execSQL(sql)
     }
@@ -42,10 +45,13 @@ class AutoPlannerDBHelper(
 
         val sqlCreateSchedule: String = "CREATE TABLE IF NOT EXISTS schedule (" +
                 "_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "start_time TIMESTAMP, " +
-                "end_time TIMESTAMP, " +
-                "title STRING, " +
-                "notes STRING);"
+                "start_time TEXT NOT NULL, " +
+                "end_time TEXT NOT NULL, " +
+                "title TEXT, " +
+                "notes TEXT, " +
+                "photo TEXT, " +
+                "lat REAL, " +
+                "lng REAL);"
         db?.execSQL(sqlCreateSchedule)
     }
 }

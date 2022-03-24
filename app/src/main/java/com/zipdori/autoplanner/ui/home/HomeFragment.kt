@@ -11,12 +11,13 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.toyproject.testproject3_zipdori.ui.home.CalendarAdapter
 import com.zipdori.autoplanner.MainActivity
 import com.zipdori.autoplanner.R
-import com.zipdori.autoplanner.database.AutoPlannerModule
+import com.zipdori.autoplanner.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
@@ -46,7 +47,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     private var isFabOpen = false
 
-    private lateinit var autoPlannerModule: AutoPlannerModule
+    private lateinit var autoPlannerDBModule: AutoPlannerDBModule
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -104,7 +105,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabText.setOnClickListener(this)
         fabAdd.setOnClickListener(this)
 
-        autoPlannerModule = AutoPlannerModule(context)
+        autoPlannerDBModule = AutoPlannerDBModule(context)
 
         return root
     }
@@ -112,11 +113,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.fragment_home, menu)
-    }
-
-    override fun onViewStateRestored(savedInstanceState: Bundle?) {
-        super.onViewStateRestored(savedInstanceState)
-        (activity as MainActivity).supportActionBar?.title = ""
     }
 
     override fun onDestroyView() {
@@ -144,8 +140,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun onClick(p0: View?) {
-        when(p0?.id) {
+    override fun onClick(view: View?) {
+        when(view?.id) {
             R.id.fab_ai -> toggleFab()
             R.id.fab_photo -> {
                 toggleFab()
@@ -157,10 +153,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
             }
             R.id.fab_text -> {
                 toggleFab()
-                Toast.makeText(context, "fab text clicked", Toast.LENGTH_SHORT).show()
+                view.findNavController().navigate(R.id.action_nav_home_to_nav_text_input)
             }
             R.id.fab_add -> {
-                Toast.makeText(context, "fab add clicked", Toast.LENGTH_SHORT).show()
                 val intent = Intent(context, SetScheduleActivity::class.java)
 
                 //SetSchedule 액티비티 실행 전에 날짜시간 인자 보내주는 걸로 일반화

@@ -1,10 +1,10 @@
-package com.zipdori.autoplanner.ui.gallery
+package com.zipdori.autoplanner.ui.textinput
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 
-class GalleryViewModel : ViewModel() {
+class TextInputViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
         value = "This is gallery Fragment"
