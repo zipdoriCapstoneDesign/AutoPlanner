@@ -11,7 +11,6 @@ import android.view.Window
 import android.widget.AbsListView
 import android.widget.BaseAdapter
 import android.widget.TextView
-import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -110,8 +109,6 @@ class CalendarAdapter(context: Context, monthFrom1902: Int) : BaseAdapter() {
         }
 
         convertView?.setOnClickListener(View.OnClickListener {
-            Toast.makeText(context, SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)).toString(), Toast.LENGTH_SHORT).show()
-
             val layoutInflater: LayoutInflater = (context as FragmentActivity).layoutInflater
             val constraintLayout: ConstraintLayout = layoutInflater.inflate(R.layout.dialog_show_schedule, null) as ConstraintLayout
 

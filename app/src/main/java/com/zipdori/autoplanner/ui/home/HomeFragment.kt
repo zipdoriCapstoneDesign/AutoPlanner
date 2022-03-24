@@ -1,19 +1,27 @@
 package com.zipdori.autoplanner.ui.home
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.toyproject.testproject3_zipdori.ui.home.CalendarAdapter
+import com.zipdori.autoplanner.MainActivity
 import com.zipdori.autoplanner.R
+import com.zipdori.autoplanner.database.AutoPlannerModule
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
+import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -38,6 +46,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     private var isFabOpen = false
 
+    private lateinit var autoPlannerModule: AutoPlannerModule
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -50,6 +60,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         val root: View = binding.root
 
         setHasOptionsMenu(true)
+
 
         viewPager2 = binding.vpCalendar
         tvYYYYMM = binding.tvYyyymm
@@ -93,12 +104,19 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabText.setOnClickListener(this)
         fabAdd.setOnClickListener(this)
 
+        autoPlannerModule = AutoPlannerModule(context)
+
         return root
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.fragment_home, menu)
+    }
+
+    override fun onViewStateRestored(savedInstanceState: Bundle?) {
+        super.onViewStateRestored(savedInstanceState)
+        (activity as MainActivity).supportActionBar?.title = ""
     }
 
     override fun onDestroyView() {
@@ -125,6 +143,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         viewPager2.setCurrentItem(monthDiff, smoothScroll)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onClick(p0: View?) {
         when(p0?.id) {
             R.id.fab_ai -> toggleFab()
@@ -142,6 +161,34 @@ class HomeFragment : Fragment(), View.OnClickListener {
             }
             R.id.fab_add -> {
                 Toast.makeText(context, "fab add clicked", Toast.LENGTH_SHORT).show()
+                val intent = Intent(context, SetScheduleActivity::class.java)
+
+                //SetSchedule 액티비티 실행 전에 날짜시간 인자 보내주는 걸로 일반화
+                //여기선 날짜 선택 없이 추가 버튼을 누르기 때문에 현재 날짜를 받아오고, 시간은 임의로 조정
+                //YMD 한번에 담아서 액티비티에서 스플릿해서 쓰거나 쓰기 편한 클래스에 잘 담아서 넘겨도 되는데 나중에 조정하는걸로
+                val current = LocalDateTime.now()
+                var formatter = DateTimeFormatter.ofPattern("yyyy")
+                var formatted = current.format(formatter)
+                intent.putExtra("FromDateYear", formatted)
+                intent.putExtra("ToDateYear", formatted)
+
+                formatter = DateTimeFormatter.ofPattern("MM")
+                formatted = current.format(formatter)
+                intent.putExtra("FromDateMonth", formatted)
+                intent.putExtra("ToDateMonth", formatted)
+
+                formatter = DateTimeFormatter.ofPattern("dd")
+                formatted = current.format(formatter)
+                intent.putExtra("FromDateDay", formatted)
+                intent.putExtra("ToDateDay", formatted)
+
+                formatter = DateTimeFormatter.ofPattern("hh")
+                formatted = current.format(formatter)
+                var curTime:Int = formatted.toInt()
+                intent.putExtra("FromTime", curTime.toString())
+                intent.putExtra("ToTime", (curTime+1).toString())
+
+                startActivity(intent)
             }
         }
     }
