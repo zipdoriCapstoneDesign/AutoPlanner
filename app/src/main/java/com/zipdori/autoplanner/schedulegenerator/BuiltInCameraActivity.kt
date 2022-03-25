@@ -54,10 +54,9 @@ class BuiltInCameraActivity(accessedActivity: AppCompatActivity) : AppCompatActi
             val uri : Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
             selectedImageUri = uri
             Log.d("selectedURI",selectedImageUri.toString())
-            Log.e("코드도달","내가먼전데")
-//            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
-//            guestActivity.startActivityForResult(takePictureIntent,FLAG_REQ_CAMERA)
+            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
+            guestActivity.startActivityForResult(takePictureIntent,FLAG_REQ_CAMERA)
 
         }
     }
@@ -153,7 +152,7 @@ class BuiltInCameraActivity(accessedActivity: AppCompatActivity) : AppCompatActi
             when(requestCode){
                 FLAG_REQ_CAMERA ->{
                     if( selectedImageUri != null) {
-                       camRunning=false
+                        camRunning=false
                     }
 
                 }

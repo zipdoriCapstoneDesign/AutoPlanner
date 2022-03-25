@@ -134,9 +134,9 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
                 if (normalCamera.checkPermission(STORAGE_PERMISSION, FLAG_PERM_STORAGE)) {
                     normalCamera.openCamera()
 
-                    val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
-                    startActivityForResult(takePictureIntent,FLAG_REQ_CAMERA)
+//                    val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+//                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
+//                    startActivityForResult(takePictureIntent,FLAG_REQ_CAMERA)
 
 
 //                    Log.e("selectedURIout",selectedImageUri.toString())
@@ -268,7 +268,8 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
 
     }
 
-    private fun openColorPickerDialog(view: LinearLayout) {
+    //컬러피커 다이얼로그 (라이브러리를 통해 동적으로 레이아웃 만들어서 열리는걸로 보임)
+    private fun openColorPickerDialog(view: ScrollView) {
         //컬러피커버튼 색 바꾸기 위한 변수들 ------------
         val drawable = ContextCompat.getDrawable(this, R.drawable.ic_colorpickerbutton) as GradientDrawable?
         val ivShape: ImageView = binding.coloredNormalButton
@@ -353,112 +354,14 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
         binding.toTimeBtn.text = strTimeNow
     }
 
-    //-----------------------------------------카메라 갤러리 관련(상단)--------------------------//
-//    private fun openCamera() {
-//        //카메라 권한이 있는지 확인
-//        if(checkPermission(CAMERA_PERMISSION,FLAG_PERM_CAMERA)){
-//            val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-//            val storageDir: File? = getExternalFilesDir(Environment.DIRECTORY_PICTURES)
-//            val takePictureIntent : Intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//            val uri : Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
-//            selectedImageUri = uri
-//            Log.d("selectedURi",selectedImageUri.toString())
-//            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
-//            startActivityForResult(takePictureIntent, FLAG_REQ_CAMERA)
-//
-//        }
-//    }
-//
-//    fun createImageUri(filename:String, mimeType:String):Uri?{
-//        var values = ContentValues()
-//        values.put(MediaStore.Images.Media.DISPLAY_NAME,filename)
-//        values.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
-//        return contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
-//    }
-//
-//
-//    // 사진 파일을 만드는 메소드
-//    @Throws(IOException::class)
-//    private fun createImageFile(): File {
-//        // Create an image file name
-//        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-//        val storageDir: File? = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
-//        return File.createTempFile(
-//            "JPEG_${timeStamp}_", /* prefix */
-//            ".jpg", /* suffix */
-//            storageDir /* directory */
-//        ).apply {
-//            // Save a file: path for use with ACTION_VIEW intents
-//            currentPhotoPath = absolutePath
-//            Log.d("test", "currentPhotoPath : $currentPhotoPath")
-//        }
-//    }
-//
-//    // 갤러리에 파일을 추가하는 함수.
-//    private fun galleryAddPic() {
-//        Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE).also { mediaScanIntent ->
-//            Log.d("test", "currentPhotoPath2 : $currentPhotoPath")
-//            val f = File(currentPhotoPath)
-//            mediaScanIntent.data = Uri.fromFile(f)
-//            sendBroadcast(mediaScanIntent)
-//        }
-//    }
-//
-//    //권한이 있는지 체크하는 메소드
-//    fun checkPermission(permissions:Array<out String>,flag:Int):Boolean{
-//        //안드로이드 버전이 마쉬멜로우 이상일때
-//        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-//            for(permission in permissions){
-//                //만약 권한이 승인되어 있지 않다면 권한승인 요청을 사용에 화면에 호출합니다.
-//                if(ContextCompat.checkSelfPermission(this,permission) != PackageManager.PERMISSION_GRANTED){
-//                    ActivityCompat.requestPermissions(this,permissions,flag)
-//                    return false
-//                }
-//            }
-//        }
-//        return true
-//    }
-//
-//    //checkPermission() 에서 ActivityCompat.requestPermissions 을 호출한 다음 사용자가 권한 허용여부를 선택하면 해당 메소드로 값이 전달 됩니다.
-//    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-//
-//        when(requestCode){
-//            FLAG_PERM_STORAGE ->{
-//                for(grant in grantResults){
-//                    if(grant != PackageManager.PERMISSION_GRANTED){
-//                        //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
-//                        Toast.makeText(this,"저장소 권한을 승인해야지만 앱을 사용할 수 있습니다..",Toast.LENGTH_SHORT).show()
-//                        finish()
-//                        return
-//                    }
-//                }
-//                //카메라 호출 메소드
-//                openCamera()
-//            }
-//            FLAG_PERM_CAMERA ->{
-//                for(grant in grantResults){
-//                    if(grant != PackageManager.PERMISSION_GRANTED){
-//                        Toast.makeText(this,"카메라 권한을 승인해야지만 카메라를 사용할 수 있습니다.",Toast.LENGTH_SHORT).show()
-//                        return
-//                    }
-//                }
-//                openCamera()
-//            }
-//        }
-//    }
-//
     //startActivityForResult 을 사용한 다음 돌아오는 결과값을 해당 메소드로 호출합니다.
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (data != null) {
-            //selectedImageUri = data.data
-            //val TAG = "MyActivity"
-            //Log.d(TAG,selectedImageUri.toString())
-        }
+
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
                 FLAG_REQ_CAMERA -> {
+                    Log.e("카메라 끝", selectedImageUri.toString())
                     selectedImageUri = normalCamera.selectedImageUri
                     binding.uploadedImage.setImageURI(selectedImageUri)
                 }
@@ -471,23 +374,5 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
             Log.e("selectedURI", selectedImageUri.toString())
         }
     }
-//
-//    fun loadBitmapFromMediaStoreBy(photoUri: Uri) : Bitmap?{
-//        var image: Bitmap? = null
-//        try{
-//            image = if(Build.VERSION.SDK_INT > 27){
-//                val source: ImageDecoder.Source = ImageDecoder.createSource(this.contentResolver, photoUri)
-//                ImageDecoder.decodeBitmap(source)
-//            }else{
-//                MediaStore.Images.Media.getBitmap(this.contentResolver, photoUri)
-//            }
-//        }catch(e:IOException){
-//            e.printStackTrace()
-//        }
-//        return image
-//    }
-//
-
-    //-----------------------------------------카메라 갤러리 관련(하단)--------------------------//
 
 }
