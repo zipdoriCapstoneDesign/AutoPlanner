@@ -14,7 +14,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AutoPlanner">
         <activity
-            android:name=".schedulegenerator.BuiltInCameraActivity"
+            android:name=".schedulegenerator.PictureManager"
             android:exported="true" />
         <activity
             android:name=".MainActivity"

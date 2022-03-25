@@ -1,13 +1,9 @@
 package com.zipdori.autoplanner.schedulegenerator
 
-import android.Manifest
 import android.app.Activity
-import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.Color
-import android.graphics.ImageDecoder
 import android.graphics.drawable.ColorDrawable
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -23,29 +19,22 @@ import androidx.core.content.ContextCompat
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
-import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
 import android.widget.*
-import androidx.annotation.NonNull
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBar
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.app.ActivityCompat
 import androidx.fragment.app.FragmentActivity
 import com.zipdori.autoplanner.R
 import java.time.LocalDateTime
 import java.util.*
 import kotlin.collections.ArrayList
-import java.io.File
-import java.io.IOException
-import java.text.SimpleDateFormat
 
 
 class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
-    val binding by lazy{ActivitySetScheduleBinding.inflate(layoutInflater)}
+    private val binding by lazy{ActivitySetScheduleBinding.inflate(layoutInflater)}
 
     //컬러피커 관련 변수. null 관련 관리 편의상 적당히 초기화  --------------승화
     var pickedColor:String = "#5EAEFF"
@@ -54,23 +43,8 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
     //처음 컬러피커 버튼 색상. 이것도 적당히 초기화
     var coloredBtnColor:Int = coloredBtnStartColor
 
-
-    //Manifest 에서 설정한 카메라 권한을 가지고 온다.
-    val CAMERA_PERMISSION = arrayOf(Manifest.permission.CAMERA)
-    val STORAGE_PERMISSION = arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE,Manifest.permission.WRITE_EXTERNAL_STORAGE)
-
-    //권한 플래그값 정의
-    val FLAG_PERM_CAMERA = 98
-    val FLAG_PERM_STORAGE = 99
-
-    //카메라와 갤러리를 호출하는 플래그
-    val FLAG_REQ_CAMERA = 101
-
-    private val GET_GALLERY_IMAGE = 200
+    val pManager:PictureManager = PictureManager(this)
     var selectedImageUri: Uri? = null
-    private lateinit var currentPhotoPath: String
-    //val normalCamera:AutoPlannerCamera = AutoPlannerCamera(this)
-    val normalCamera:BuiltInCameraActivity = BuiltInCameraActivity(this)
 
     //같은 레이아웃을 쓰는 기간 설정 버튼 기간 시작일인지 종료일인지 나누는 플래그
     val FLAG_FROM = 500
@@ -130,24 +104,10 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
                 setInfoForTimeButton(FLAG_TO)
             }
             R.id.uploadImage -> {
-                //normalCamera.borrowCamera()
-                if (normalCamera.checkPermission(STORAGE_PERMISSION, FLAG_PERM_STORAGE)) {
-                    normalCamera.openCamera()
-
-//                    val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//                    takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
-//                    startActivityForResult(takePictureIntent,FLAG_REQ_CAMERA)
-
-
-//                    Log.e("selectedURIout",selectedImageUri.toString())
-//                    Log.e("코드도달순서","내가먼저야")
-
-                }
+                pManager.openCamera()
             }
             R.id.uploadImageFromGallery -> {
-                val intent = Intent(Intent.ACTION_PICK)
-                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
-                startActivityForResult(intent, GET_GALLERY_IMAGE)
+                pManager.openGallery()
             }
             R.id.uploadedImage ->{
                 val layoutInflater: LayoutInflater = (this as FragmentActivity).layoutInflater
@@ -360,18 +320,60 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
 
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
-                FLAG_REQ_CAMERA -> {
-                    Log.e("카메라 끝", selectedImageUri.toString())
-                    selectedImageUri = normalCamera.selectedImageUri
+
+                Flags.FLAG_REQ_CAMERA -> {
+                    selectedImageUri = pManager.selectedImageUri
                     binding.uploadedImage.setImageURI(selectedImageUri)
+                }
+
+                Flags.GET_GALLERY_IMAGE -> {
+                    if(data != null && data.data != null){
+                        selectedImageUri = data.data
+                        binding.uploadedImage.setImageURI(selectedImageUri)
+                        //갤러리 사진 링크 확인시
+                        //Log.e("selectedURI", selectedImageUri.toString())
+                    }
+
                 }
             }
         }
-        //갤러리
-        if (requestCode == GET_GALLERY_IMAGE && resultCode == RESULT_OK && data != null && data.data != null) {
-            selectedImageUri = data.data
-            binding.uploadedImage.setImageURI(selectedImageUri)
-            Log.e("selectedURI", selectedImageUri.toString())
+    }
+    //checkPermission() 에서 ActivityCompat.requestPermissions 을 호출한 다음 사용자가 권한 허용여부를 선택하면 해당 메소드로 값이 전달 됩니다.
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when(requestCode){
+
+            Flags.FLAG_PERM_STORAGE_FOR_CAMERA ->{
+                for(grant in grantResults){
+                    if(grant != PackageManager.PERMISSION_GRANTED){
+                        //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
+                        Toast.makeText(this,"저장소 권한을 승인해야지만 앱을 사용할 수 있습니다. 앱 정보에서 승인해주세요.", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                }
+                //카메라 호출 메소드
+                pManager.openCamera()
+            }
+            Flags.FLAG_PERM_CAMERA ->{
+                for(grant in grantResults){
+                    if(grant != PackageManager.PERMISSION_GRANTED){
+                        Toast.makeText(this,"카메라 권한을 승인해야지만 카메라를 사용할 수 있습니다. 앱 정보에서 승인해주세요.", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                }
+                pManager.openCamera()
+            }
+            Flags.FLAG_PERM_STORAGE ->{
+                for(grant in grantResults){
+                    if(grant != PackageManager.PERMISSION_GRANTED){
+                        //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
+                        Toast.makeText(this,"저장소 권한을 승인해야지만 앱을 사용할 수 있습니다..", Toast.LENGTH_SHORT).show()
+                        return
+                    }
+                }
+                pManager.openGallery()
+            }
         }
     }
 
