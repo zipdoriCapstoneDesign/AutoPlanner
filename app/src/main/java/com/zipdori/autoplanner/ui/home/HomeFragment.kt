@@ -15,10 +15,9 @@ import androidx.navigation.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.toyproject.testproject3_zipdori.ui.home.CalendarAdapter
-import com.zipdori.autoplanner.MainActivity
 import com.zipdori.autoplanner.R
-import com.zipdori.autoplanner.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
+import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime

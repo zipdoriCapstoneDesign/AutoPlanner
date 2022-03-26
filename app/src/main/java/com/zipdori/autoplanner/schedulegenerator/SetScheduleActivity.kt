@@ -343,7 +343,6 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
         when(requestCode){
-
             Flags.FLAG_PERM_STORAGE_FOR_CAMERA ->{
                 for(grant in grantResults){
                     if(grant != PackageManager.PERMISSION_GRANTED){

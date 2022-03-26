@@ -1,9 +1,8 @@
-package com.zipdori.autoplanner.database
+package com.zipdori.autoplanner.modules.database
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import java.sql.Timestamp
 
 class AutoPlannerDBHelper(
     context: Context?,

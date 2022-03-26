@@ -1,4 +1,4 @@
-package com.zipdori.autoplanner.database
+package com.zipdori.autoplanner.modules.database
 
 import android.content.ContentValues
 import android.content.Context
