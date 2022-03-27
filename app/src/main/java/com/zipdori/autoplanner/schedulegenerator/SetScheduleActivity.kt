@@ -262,11 +262,14 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
             tempCal = planTo.clone() as Calendar
 
         regBtn.setOnClickListener {
+            //오전 11시는 값이 11이지만 오전 12시는 값이 0이다. 오후도 비슷한 맥락에서 조정
+            var hourBound = hour.value
+            if (hourBound == 12) hourBound -=12
             // 오전오후 값을 보고 넘버피커에서 오후 1시로 보이면 13시로 셋팅하는 방식
             if (ampm.value == 0)
-                tempCal!!.set(Calendar.HOUR_OF_DAY, hour.value-12)
+                tempCal!!.set(Calendar.HOUR_OF_DAY, hourBound)
             else
-                tempCal!!.set(Calendar.HOUR_OF_DAY, hour.value)
+                tempCal!!.set(Calendar.HOUR_OF_DAY, hourBound+12)
 
             tempCal!!.set(Calendar.MINUTE, minute.value)
 
