@@ -158,30 +158,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 val intent = Intent(context, SetScheduleActivity::class.java)
 
                 //SetSchedule 액티비티 실행 전에 날짜시간 인자 보내주는 걸로 일반화
-                //여기선 날짜 선택 없이 추가 버튼을 누르기 때문에 현재 날짜를 받아오고, 시간은 임의로 조정
-                //YMD 한번에 담아서 액티비티에서 스플릿해서 쓰거나 쓰기 편한 클래스에 잘 담아서 넘겨도 되는데 나중에 조정하는걸로
-                val current = LocalDateTime.now()
-                var formatter = DateTimeFormatter.ofPattern("yyyy")
-                var formatted = current.format(formatter)
-                intent.putExtra("FromDateYear", formatted)
-                intent.putExtra("ToDateYear", formatted)
+                val fromCal = Calendar.getInstance()
+                val toCal = Calendar.getInstance()
 
-                formatter = DateTimeFormatter.ofPattern("MM")
-                formatted = current.format(formatter)
-                intent.putExtra("FromDateMonth", formatted)
-                intent.putExtra("ToDateMonth", formatted)
+                // 기본 일정 추가 버튼은 현재시간과 +1시간으로 범위 설정
+                toCal.add(Calendar.HOUR,1)
 
-                formatter = DateTimeFormatter.ofPattern("dd")
-                formatted = current.format(formatter)
-                intent.putExtra("FromDateDay", formatted)
-                intent.putExtra("ToDateDay", formatted)
-
-                formatter = DateTimeFormatter.ofPattern("hh")
-                formatted = current.format(formatter)
-                var curTime:Int = formatted.toInt()
-                intent.putExtra("FromTime", curTime.toString())
-                intent.putExtra("ToTime", (curTime+1).toString())
-
+                intent.putExtra("FromDate", fromCal.timeInMillis)
+                intent.putExtra("ToDate", toCal.timeInMillis)
                 startActivity(intent)
             }
         }

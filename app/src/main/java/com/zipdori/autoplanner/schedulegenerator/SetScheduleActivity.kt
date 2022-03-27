@@ -28,40 +28,58 @@ import androidx.appcompat.app.ActionBar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentActivity
 import com.zipdori.autoplanner.R
-import java.time.LocalDateTime
+import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
 
-class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
-    private val binding by lazy{ActivitySetScheduleBinding.inflate(layoutInflater)}
+class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
+    private val binding by lazy { ActivitySetScheduleBinding.inflate(layoutInflater) }
 
     //컬러피커 관련 변수. null 관련 관리 편의상 적당히 초기화  --------------승화
-    var pickedColor:String = "#5EAEFF"
-    var coloredBtnStartColor:Int = -10572033
+    var pickedColor: String = "#5EAEFF"
+    var coloredBtnStartColor: Int = -10572033
 
     //처음 컬러피커 버튼 색상. 이것도 적당히 초기화
-    var coloredBtnColor:Int = coloredBtnStartColor
+    var coloredBtnColor: Int = coloredBtnStartColor
 
-    val pManager:PictureManager = PictureManager(this)
+    val pManager: PictureManager = PictureManager(this)
     var selectedImageUri: Uri? = null
 
     //같은 레이아웃을 쓰는 기간 설정 버튼 기간 시작일인지 종료일인지 나누는 플래그
     val FLAG_FROM = 500
     val FLAG_TO = 501
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    //기간설정 시간순이 뒤집혔을 때 재설정 범위
+    val FLAG_DAY = 600
+    val FLAG_HOUR = 601
+
+    var planFrom: Calendar = Calendar.getInstance()
+    var planTo: Calendar = Calendar.getInstance()
+    var tempCal:Calendar? = null // 연월일 설정시 캘린더에서 날짜를 눌러대면 등록 버튼 누를 때까지 바로 적용되지 않게 임시 캘린더 변수
+
+    val calYearForm: DateFormat = SimpleDateFormat("yyyy년")
+    val calMdForm = SimpleDateFormat("MM월 dd일")
+    val calhmForm = SimpleDateFormat("a h시 mm분", Locale.KOREA)
+
+    ////로그 확인 시 참고 형태 Log.e("btemp", calCheckForm.format(tempCal!!.time))
+    val calCheckForm = SimpleDateFormat("yy.MM.dd hh:mm")
+
+    //@RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
 
         val view = binding.root
         val actionBar: ActionBar? = supportActionBar
         actionBar?.hide()
         setContentView(view)
 
-        initTextForButton()
+        // 액티비티가 처음 틀어질 때 기간 설정 버튼에 입력되어있을 시작/종료일.시간 설정
+        planFrom.timeInMillis = intent.getLongExtra("FromDate",0)
+        planTo.timeInMillis = intent.getLongExtra("ToDate",0)
 
+        writeDateTimeToButton()
         //---------------------버튼---------------------
 
         //색상 버튼 눌렀을 때 -----
@@ -78,10 +96,10 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
         binding.uploadedImage.setOnClickListener(this)
 
         // 등록/취소 버튼들
-        binding.backButton.setOnClickListener(){
+        binding.backButton.setOnClickListener() {
             finish()
         }
-        binding.regButton.setOnClickListener(){
+        binding.regButton.setOnClickListener() {
             binding.regButton.text = "눌림"
         }
     }
@@ -89,19 +107,19 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
     // OnClick 코드들
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onClick(p0: View?) {
-        when(p0?.id) {
+        when (p0?.id) {
             // 기간 시작일 설정
             R.id.fromDateBtn -> {
-                setInfoForDateButton(FLAG_FROM)
+                setInfoByDateButton(FLAG_FROM)
             }
-            R.id.fromTimeBtn->{
-                setInfoForTimeButton(FLAG_FROM)
+            R.id.fromTimeBtn -> {
+                setInfoByTimeButton(FLAG_FROM)
             }
             R.id.toDateBtn -> {
-                setInfoForDateButton(FLAG_TO)
+                setInfoByDateButton(FLAG_TO)
             }
-            R.id.toTimeBtn->{
-                setInfoForTimeButton(FLAG_TO)
+            R.id.toTimeBtn -> {
+                setInfoByTimeButton(FLAG_TO)
             }
             R.id.uploadImage -> {
                 pManager.openCamera()
@@ -109,12 +127,16 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
             R.id.uploadImageFromGallery -> {
                 pManager.openGallery()
             }
-            R.id.uploadedImage ->{
+            // TODO: 2022-03-27 이미지뷰에 채운 사진 없애는 기능
+            R.id.uploadedImage -> {
                 val layoutInflater: LayoutInflater = (this as FragmentActivity).layoutInflater
-                val constraintLayout: ConstraintLayout = layoutInflater.inflate(R.layout.schedulepicture_expanded, null) as ConstraintLayout
+                val constraintLayout: ConstraintLayout = layoutInflater.inflate(
+                    R.layout.schedulepicture_expanded,
+                    null
+                ) as ConstraintLayout
 
-                val expandedImage:ImageView = constraintLayout.findViewById(R.id.imageExpanded)
-                val expandedClose:Button = constraintLayout.findViewById(R.id.imgExpand_return)
+                val expandedImage: ImageView = constraintLayout.findViewById(R.id.imageExpanded)
+                val expandedClose: Button = constraintLayout.findViewById(R.id.imgExpand_return)
 
                 expandedImage.setImageURI(selectedImageUri)
                 val builder: android.app.AlertDialog.Builder = android.app.AlertDialog.Builder(this)
@@ -133,16 +155,74 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
         }
     }
 
-    private fun setInfoForTimeButton(fromToFlag: Int) {
+
+    // TODO: 2022-03-27 이하 3개 함수 리팩토링의 여지가 있을 것 같습니다. 다른 레이아웃 만드는 거보다 이런거 해놓고 넘어가는게 좋다던가 작업 우선순위로 두는게 좋다면 알려주세요
+    // TODO: planFrom과 planTo가 완전히는 아니지만 제법 데칼코마니 구성
+    private fun setInfoByDateButton(fromToFlag: Int) {
+        // 기간 날짜 지정하는 레이아웃 불러오기
         val layoutInflater: LayoutInflater = (this as FragmentActivity).layoutInflater
-        val constraintLayout: ConstraintLayout = layoutInflater.inflate(R.layout.dialog_set_schedule_time, null) as ConstraintLayout
+        val constraintLayout: ConstraintLayout =
+            layoutInflater.inflate(R.layout.dialog_set_schedule_date, null) as ConstraintLayout
 
-        val regBtn:Button = constraintLayout.findViewById(R.id.setTimeRegButton)
-        val exitBtn:Button = constraintLayout.findViewById(R.id.setTimeBackButton)
+        val regBtn: Button = constraintLayout.findViewById(R.id.calRegButton)
+        val exitBtn: Button = constraintLayout.findViewById(R.id.calBackButton)
+        val calForSet: CalendarView = constraintLayout.findViewById(R.id.calForSetTerm)
 
-        val ampm:NumberPicker= constraintLayout.findViewById(R.id.set_ampm)
-        val hour:NumberPicker= constraintLayout.findViewById(R.id.num_picker_hour)
-        val minute:NumberPicker= constraintLayout.findViewById(R.id.num_picker_minute)
+        val builder: android.app.AlertDialog.Builder = android.app.AlertDialog.Builder(this)
+        builder.setView(constraintLayout)
+        val alertDialog: android.app.AlertDialog = builder.create()
+        alertDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        alertDialog.window?.requestFeature(Window.FEATURE_NO_TITLE)
+        alertDialog.show()
+
+        if(fromToFlag == FLAG_FROM) {
+            tempCal = planFrom.clone() as Calendar
+            calForSet.setDate(planFrom.timeInMillis)
+        }else {
+            tempCal = planTo.clone() as Calendar
+            calForSet.setDate(planTo.timeInMillis)
+        }
+        // 캘린더에서 날짜 클릭할 때마다 호출되는 함수
+        calForSet.setOnDateChangeListener { calendarView, year, month, day ->
+            tempCal!!.set(year, month, day)
+            Toast.makeText(this, month.toString() + "." + day.toString(), Toast.LENGTH_SHORT).show()
+        }
+
+        // 연월일 설정하는 버튼으로 연 캘린더 다이얼로그의 등록/취소 버튼
+        regBtn.setOnClickListener {
+
+            // 버튼에 해당하는 시간은 반드시 지정한 시간이 됨
+            if (fromToFlag == FLAG_FROM)
+                planFrom = tempCal!!.clone() as Calendar
+
+            else
+                planTo = tempCal!!.clone() as Calendar
+
+            //기간 시작일과 종료일의 시간순이 뒤집혔을 때
+            if (planFrom.timeInMillis >= planTo.timeInMillis) {
+                timeUntieBy(fromToFlag, FLAG_DAY)
+            }
+
+            //기간 시작종료일 셋팅이 끝났으니 텍스트 리프레시
+            writeDateTimeToButton()
+            alertDialog.dismiss()
+        }
+        exitBtn.setOnClickListener {
+            alertDialog.dismiss()
+        }
+    }
+
+    private fun setInfoByTimeButton(fromToFlag: Int) {
+        val layoutInflater: LayoutInflater = (this as FragmentActivity).layoutInflater
+        val constraintLayout: ConstraintLayout =
+            layoutInflater.inflate(R.layout.dialog_set_schedule_time, null) as ConstraintLayout
+
+        val regBtn: Button = constraintLayout.findViewById(R.id.setTimeRegButton)
+        val exitBtn: Button = constraintLayout.findViewById(R.id.setTimeBackButton)
+
+        val ampm: NumberPicker = constraintLayout.findViewById(R.id.set_ampm)
+        val hour: NumberPicker = constraintLayout.findViewById(R.id.num_picker_hour)
+        val minute: NumberPicker = constraintLayout.findViewById(R.id.num_picker_minute)
 
         val builder: android.app.AlertDialog.Builder = android.app.AlertDialog.Builder(this)
         builder.setView(constraintLayout)
@@ -153,85 +233,115 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
 
         ampm.wrapSelectorWheel = false
 
-        hour.minValue=1
-        hour.maxValue=12
+        hour.minValue = 1
+        hour.maxValue = 12
 
-        minute.minValue=0
-        minute.maxValue=59
+        minute.minValue = 0
+        minute.maxValue = 59
 
-        ampm.minValue=0
-        ampm.maxValue=1
-        ampm.displayedValues = arrayOf("오전","오후")
+        ampm.minValue = 0
+        ampm.maxValue = 1
+        ampm.displayedValues = arrayOf("오전", "오후")
 
-        regBtn.setOnClickListener{
-            var minTxt:String = if(minute.value<10) {"0"+minute.value.toString()} else {minute.value.toString()}
-            var ampmTxt:String = if(ampm.value==0){"오전 "} else {"오후 "}
-
-            if(fromToFlag == FLAG_FROM) binding.fromTimeBtn.text =ampmTxt + hour.value.toString()+":"+minTxt
-            else binding.toTimeBtn.text =ampmTxt + hour.value.toString()+":"+minTxt
-            alertDialog.dismiss()
+        if(fromToFlag == FLAG_FROM) {
+            if (planFrom.get(Calendar.HOUR_OF_DAY) < 12) ampm.value = 0
+            else ampm.value = 1
+            hour.value = planFrom.get(Calendar.HOUR)
+            minute.value = planFrom.get(Calendar.MINUTE)
         }
-        exitBtn.setOnClickListener{
+        else {
+            if (planTo.get(Calendar.HOUR_OF_DAY) < 12) ampm.value = 0
+            else ampm.value = 1
+            hour.value = planTo.get(Calendar.HOUR)
+            minute.value = planTo.get(Calendar.MINUTE)
+        }
+
+        if(fromToFlag == FLAG_FROM)
+            tempCal = planFrom.clone() as Calendar
+        else
+            tempCal = planTo.clone() as Calendar
+
+        regBtn.setOnClickListener {
+            // 오전오후 값을 보고 넘버피커에서 오후 1시로 보이면 13시로 셋팅하는 방식
+            if (ampm.value == 0)
+                tempCal!!.set(Calendar.HOUR_OF_DAY, hour.value-12)
+            else
+                tempCal!!.set(Calendar.HOUR_OF_DAY, hour.value)
+
+            tempCal!!.set(Calendar.MINUTE, minute.value)
+
+            //  버튼에 해당하는 시간은 반드시 지정한 시간이 됨
+            if (fromToFlag == FLAG_FROM)
+                planFrom = tempCal!!.clone() as Calendar
+            else
+                planTo = tempCal!!.clone() as Calendar
+
+            if (planFrom.timeInMillis >= planTo.timeInMillis) {
+                timeUntieBy(fromToFlag, FLAG_HOUR)
+            }
+            writeDateTimeToButton()
+            alertDialog.dismiss()
+
+        }
+        exitBtn.setOnClickListener {
             alertDialog.dismiss()
         }
     }
 
-    private fun setInfoForDateButton(fromToFlag: Int) {
-        val layoutInflater: LayoutInflater = (this as FragmentActivity).layoutInflater
-        val constraintLayout: ConstraintLayout = layoutInflater.inflate(R.layout.dialog_set_schedule_date, null) as ConstraintLayout
+    //기간설정하다가 시간순이 뒤집혔을 때 풀어주는 함수
+    
+    private fun timeUntieBy(fromToFlag:Int, timeUnit: Int) {
+        // 기간 시작일 버튼으로 들어왔다면
+        if (fromToFlag == FLAG_FROM) {
+            //기간 종료일을 시작일과 맞춘다
+            planTo.set(Calendar.YEAR, planFrom.get(Calendar.YEAR))
+            planTo.set(Calendar.MONTH, planFrom.get(Calendar.MONTH))
+            planTo.set(Calendar.DAY_OF_MONTH, planFrom.get(Calendar.DAY_OF_MONTH))
 
-        val regBtn:Button = constraintLayout.findViewById(R.id.calRegButton)
-        val exitBtn:Button = constraintLayout.findViewById(R.id.calBackButton)
-        val calForSet:CalendarView = constraintLayout.findViewById(R.id.calForSetTerm)
+            //연월일을 맞췄는데 시.분 때문에 여전히 뒤집힌 상태라면
+            if (planFrom.timeInMillis >= planTo.timeInMillis) {
+                if(timeUnit==FLAG_DAY)
+                    planTo.add(Calendar.DAY_OF_MONTH, 1) //[연월일 설정] 버튼으로 들어왔다면 마감일에 하루 연장
+                else{                                                       //[시.분 설정] 버튼으로 들어왔다면
+                    planTo.set(Calendar.HOUR_OF_DAY, planFrom.get(Calendar.HOUR_OF_DAY))    //마감일 연장 안 하고 시간까지 일치시켜보기
+                    if (planFrom.timeInMillis >= planTo.timeInMillis) planTo.add(Calendar.HOUR, 1)   //그래도 분 때문에 시간 역전이 안 되면 마감시간에 한 시간 연장
 
-        val builder: android.app.AlertDialog.Builder = android.app.AlertDialog.Builder(this)
-        builder.setView(constraintLayout)
-        val alertDialog: android.app.AlertDialog = builder.create()
-        alertDialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        alertDialog.window?.requestFeature(Window.FEATURE_NO_TITLE)
-        alertDialog.show()
-
-        // 기간설정 버튼에 적힌 날짜가 불러와져야 되는데 당분간 오늘날짜로 무조건 뜨게 놔두고 나중에 데이터베이스 정리가 되면 조정할 붖분
-        var selectedYear:Int = 2022
-        var selectedMonth:Int = intent.getStringExtra("FromDateMonth")!!.toInt()
-        var selectedDay:Int = intent.getStringExtra("FromDateDay")!!.toInt()
-
-        // 캘린더에서 날짜 클릭할 때마다 호출되는 함수
-        calForSet.setOnDateChangeListener { calendarView, year, month, day ->
-            selectedYear=year
-            selectedMonth=month
-            selectedDay=day
-            Toast.makeText(this,month.toString()+"."+day.toString(),Toast.LENGTH_SHORT).show()
+                }
+            }
+        } else {
+            planFrom.set(Calendar.YEAR, planTo.get(Calendar.YEAR))
+            planFrom.set(Calendar.MONTH, planTo.get(Calendar.MONTH))
+            planFrom.set(Calendar.DAY_OF_MONTH, planTo.get(Calendar.DAY_OF_MONTH))
+            //연월일을 맞췄음에도 여전히 시간순이 뒤집혀있으면
+            if (planFrom.timeInMillis >= planTo.timeInMillis) {
+                //시작일 하루 앞으로
+                if(timeUnit==FLAG_DAY)
+                    planFrom.add(Calendar.DAY_OF_MONTH, -1)
+                else {
+                    planFrom.set(Calendar.HOUR_OF_DAY, planTo.get(Calendar.HOUR_OF_DAY))    //시간까지 일치시켜보기
+                    if (planFrom.timeInMillis >= planTo.timeInMillis) planFrom.add(Calendar.HOUR, -1)   //그래도 분 때문에 시간 역전이 안 되면 시작시간 한 시간 감소
+                }
+            }
         }
 
-        // 기간설정 캘린더 다이얼로그의 등록/취소 버튼
-        regBtn.setOnClickListener {
-            var selectedMonthStr:String
-            var selectedDayStr:String
+    }
 
-            //03월이 3월로 뜨는 식의 현상 교정 (03으로 통일)
-            if (selectedMonth < 10) selectedMonthStr = "0$selectedMonth"
-            else selectedMonthStr = "$selectedMonth"
+    private fun writeDateTimeToButton() {
+        //기간 설정 4개 버튼 텍스트 리프레시
+        binding.fromDateBtn.text = calMdForm.format(planFrom.time)
+        binding.fromTimeBtn.text = calhmForm.format(planFrom.time)
 
-            if (selectedDay < 10) selectedDayStr = "0$selectedDay"
-            else selectedDayStr = "$selectedDay"
-
-            val resultTxt = selectedMonthStr + "월 " + selectedDayStr + "일"
-            if (fromToFlag == FLAG_FROM) binding.fromDateBtn.text = resultTxt
-            else binding.toDateBtn.text = resultTxt
-
-            alertDialog.dismiss()
-        }
-        exitBtn.setOnClickListener{
-            alertDialog.dismiss()
-        }
-
+        binding.toDateBtn.text = calMdForm.format(planTo.time)
+        binding.toTimeBtn.text = calhmForm.format(planTo.time)
     }
 
     //컬러피커 다이얼로그 (라이브러리를 통해 동적으로 레이아웃 만들어서 열리는걸로 보임)
     private fun openColorPickerDialog(view: ScrollView) {
         //컬러피커버튼 색 바꾸기 위한 변수들 ------------
-        val drawable = ContextCompat.getDrawable(this, R.drawable.ic_colorpickerbutton) as GradientDrawable?
+        val drawable = ContextCompat.getDrawable(
+            this,
+            R.drawable.ic_colorpickerbutton
+        ) as GradientDrawable?
         val ivShape: ImageView = binding.coloredNormalButton
 
         val colorPicker = ColorPicker(this@SetScheduleActivity)
@@ -277,43 +387,6 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
             .show()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    private fun initTextForButton() {
-        //현재 날짜,시간 받아와서 기간 설정 버튼들에 텍스트로 설정(어떻게 이 액티비티에 접근하는지(날짜칸/fab 등) 에 따라 바껴야하는 부분)
-        var now = LocalDateTime.now()
-
-        var strnow = intent.getStringExtra("FromDateMonth") + "월 "+ intent.getStringExtra("FromDateDay") +"일"
-        binding.fromDateBtn.text = strnow
-        strnow = intent.getStringExtra("ToDateMonth") + "월 "+ intent.getStringExtra("ToDateDay") +"일"
-        binding.toDateBtn.text = strnow
-
-        var hourNow = intent.getStringExtra("FromTime")!!.toInt()
-        var isPM:Boolean = hourNow>=12
-
-        var strTimeNow = "??:00"
-        if(isPM){
-            if(hourNow>12) hourNow-=12
-            strTimeNow = "오후 $hourNow:00"
-        }
-        else{
-            strTimeNow = "오전 $hourNow:00"
-        }
-        binding.fromTimeBtn.text = strTimeNow
-
-        hourNow = intent.getStringExtra("ToTime")!!.toInt()
-        isPM = hourNow>=12
-
-        strTimeNow = "??:00"
-        if(isPM){
-            if(hourNow>12) hourNow-=12
-            strTimeNow = "오후 $hourNow:00"
-        }
-        else{
-            strTimeNow = "오전 $hourNow:00"
-        }
-        binding.toTimeBtn.text = strTimeNow
-    }
-
     //startActivityForResult 을 사용한 다음 돌아오는 결과값을 해당 메소드로 호출합니다.
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -327,7 +400,7 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
                 }
 
                 Flags.GET_GALLERY_IMAGE -> {
-                    if(data != null && data.data != null){
+                    if (data != null && data.data != null) {
                         selectedImageUri = data.data
                         binding.uploadedImage.setImageURI(selectedImageUri)
                         //갤러리 사진 링크 확인시
@@ -338,36 +411,54 @@ class SetScheduleActivity : AppCompatActivity(),View.OnClickListener  {
             }
         }
     }
+
     //checkPermission() 에서 ActivityCompat.requestPermissions 을 호출한 다음 사용자가 권한 허용여부를 선택하면 해당 메소드로 값이 전달 됩니다.
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
 
         when(requestCode){
             Flags.FLAG_PERM_STORAGE_FOR_CAMERA ->{
                 for(grant in grantResults){
                     if(grant != PackageManager.PERMISSION_GRANTED){
-                        //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
-                        Toast.makeText(this,"저장소 권한을 승인해야지만 앱을 사용할 수 있습니다. 앱 정보에서 승인해주세요.", Toast.LENGTH_SHORT).show()
+           //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
+                        Toast.makeText(
+                            this,
+                            "저장소 권한을 승인해야지만 앱을 사용할 수 있습니다. 앱 정보에서 승인해주세요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return
                     }
                 }
                 //카메라 호출 메소드
                 pManager.openCamera()
             }
-            Flags.FLAG_PERM_CAMERA ->{
-                for(grant in grantResults){
-                    if(grant != PackageManager.PERMISSION_GRANTED){
-                        Toast.makeText(this,"카메라 권한을 승인해야지만 카메라를 사용할 수 있습니다. 앱 정보에서 승인해주세요.", Toast.LENGTH_SHORT).show()
+            Flags.FLAG_PERM_CAMERA -> {
+                for (grant in grantResults) {
+                    if (grant != PackageManager.PERMISSION_GRANTED) {
+                        Toast.makeText(
+                            this,
+                            "카메라 권한을 승인해야지만 카메라를 사용할 수 있습니다. 앱 정보에서 승인해주세요.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return
                     }
                 }
                 pManager.openCamera()
             }
-            Flags.FLAG_PERM_STORAGE ->{
-                for(grant in grantResults){
-                    if(grant != PackageManager.PERMISSION_GRANTED){
+            Flags.FLAG_PERM_STORAGE -> {
+                for (grant in grantResults) {
+                    if (grant != PackageManager.PERMISSION_GRANTED) {
                         //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
-                        Toast.makeText(this,"저장소 권한을 승인해야지만 앱을 사용할 수 있습니다..", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this,
+                            "저장소 권한을 승인해야지만 앱을 사용할 수 있습니다..",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         return
                     }
                 }
