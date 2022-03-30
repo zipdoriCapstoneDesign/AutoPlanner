@@ -177,47 +177,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
             R.id.fab_gallery -> {
                 toggleFab()
                 Toast.makeText(context, "fab gallery clicked", Toast.LENGTH_SHORT).show()
-
-                // Projection array. Creating indices for this array instead of doing
-                // dynamic lookups improves performance.
-                val EVENT_PROJECTION: Array<String> = arrayOf(
-                    CalendarContract.Calendars._ID,                     // 0
-                    CalendarContract.Calendars.ACCOUNT_NAME,            // 1
-                    CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,   // 2
-                    CalendarContract.Calendars.OWNER_ACCOUNT            // 3
-                )
-
-                // The indices for the projection array above.
-                val PROJECTION_ID_INDEX: Int = 0
-                val PROJECTION_ACCOUNT_NAME_INDEX: Int = 1
-                val PROJECTION_DISPLAY_NAME_INDEX: Int = 2
-                val PROJECTION_OWNER_ACCOUNT_INDEX: Int = 3
-
-                // Run query
-                val uri: Uri = CalendarContract.Calendars.CONTENT_URI
-                /*
-                val selection: String = "((${CalendarContract.Calendars.ACCOUNT_NAME} = ?) AND (" +
-                        "${CalendarContract.Calendars.ACCOUNT_TYPE} = ?) AND (" +
-                        "${CalendarContract.Calendars.OWNER_ACCOUNT} = ?))"
-                val selectionArgs: Array<String> = arrayOf("kdlrlgusk@naver.com", "com.example")
-                val cur: Cursor = context!!.contentResolver.query(uri, EVENT_PROJECTION, selection, selectionArgs, null)!!
-
-                 */
-                val cur: Cursor = context!!.contentResolver.query(uri, EVENT_PROJECTION, null, null, null)!!
-
-                // Use the cursor to step through the returned records
-                while (cur.moveToNext()) {
-                    // Get the field values
-                    val calID: Long = cur.getLong(PROJECTION_ID_INDEX)
-                    val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
-                    val accountName: String = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX)
-                    val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
-                    // Do something with the values...
-                    println("calID : " + calID)
-                    println("displayName : " + displayName)
-                    println("accountName : " + accountName)
-                    println("ownerName : " + ownerName)
-                }
             }
             R.id.fab_text -> {
                 toggleFab()
