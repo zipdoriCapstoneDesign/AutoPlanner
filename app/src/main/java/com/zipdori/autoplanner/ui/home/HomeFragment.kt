@@ -1,8 +1,11 @@
 package com.zipdori.autoplanner.ui.home
 
 import android.content.Intent
+import android.database.Cursor
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.CalendarContract
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -17,13 +20,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.toyproject.testproject3_zipdori.ui.home.CalendarAdapter
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
+import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
+import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 
 class HomeFragment : Fragment(), View.OnClickListener {
 
@@ -47,6 +51,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private var isFabOpen = false
 
     private lateinit var autoPlannerDBModule: AutoPlannerDBModule
+
+    val schedules: HashMap<String, ArrayList<EventsVO>> = HashMap()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -73,10 +79,39 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabOpen = AnimationUtils.loadAnimation(context, R.anim.fab_open)
         fabClose = AnimationUtils.loadAnimation(context, R.anim.fab_close)
 
+        val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(context!!)
+        val allEvents: ArrayList<EventsVO> = calendarProviderModule.selectAllEvents()
+
+        allEvents.forEach {
+            val calendar: Calendar = Calendar.getInstance()
+            calendar.timeInMillis = it.dtStart.toLong()
+
+            val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
+
+            var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(calendar.time))
+            if (tempArray == null) {
+                tempArray = ArrayList()
+            }
+            tempArray.add(it)
+            schedules.put(simpleDateFormat.format(calendar.time), tempArray)
+        }
+
+        val arrayList: java.util.ArrayList<EventsVO>? = schedules.get("2022.03.15")
+        if (arrayList != null) {
+            arrayList.forEach {
+                println(it.title + it.dtStart + it.dtEnd)
+            }
+        }
+
         // GridView 를 위한 CalendarAdapter
         val calendarAdapterArrayList: ArrayList<CalendarAdapter> = ArrayList()
+        val calendar: Calendar = Calendar.getInstance()
+        calendar.set(Calendar.YEAR, 1902)
+        calendar.set(Calendar.MONTH, 0)
+        calendar.set(Calendar.DATE, 1)
         for (i in 0 until 2400) {
-            calendarAdapterArrayList.add(CalendarAdapter(context!!, i))
+            calendarAdapterArrayList.add(CalendarAdapter(context!!, calendar, schedules))
+            calendar.add(Calendar.MONTH, 1)
         }
 
         // ViewPager2 어댑터 및 초기 설정
@@ -84,14 +119,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         viewPager2.orientation = ViewPager2.ORIENTATION_HORIZONTAL
         viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                val calendar:Calendar = Calendar.getInstance()
-                calendar.set(Calendar.YEAR, 1902)
-                calendar.set(Calendar.MONTH, 0)
-                calendar.set(Calendar.DATE, 1)
-                calendar.add(Calendar.MONTH, position)
-
-                val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM", Locale.US)
-                tvYYYYMM.text = simpleDateFormat.format(calendar.time)
+                tvYYYYMM.text = (viewPager2.adapter as ViewPager2Adapter).calendarAdapterArrayList.get(position).getTitle()
 
                 super.onPageSelected(position)
             }
@@ -149,6 +177,47 @@ class HomeFragment : Fragment(), View.OnClickListener {
             R.id.fab_gallery -> {
                 toggleFab()
                 Toast.makeText(context, "fab gallery clicked", Toast.LENGTH_SHORT).show()
+
+                // Projection array. Creating indices for this array instead of doing
+                // dynamic lookups improves performance.
+                val EVENT_PROJECTION: Array<String> = arrayOf(
+                    CalendarContract.Calendars._ID,                     // 0
+                    CalendarContract.Calendars.ACCOUNT_NAME,            // 1
+                    CalendarContract.Calendars.CALENDAR_DISPLAY_NAME,   // 2
+                    CalendarContract.Calendars.OWNER_ACCOUNT            // 3
+                )
+
+                // The indices for the projection array above.
+                val PROJECTION_ID_INDEX: Int = 0
+                val PROJECTION_ACCOUNT_NAME_INDEX: Int = 1
+                val PROJECTION_DISPLAY_NAME_INDEX: Int = 2
+                val PROJECTION_OWNER_ACCOUNT_INDEX: Int = 3
+
+                // Run query
+                val uri: Uri = CalendarContract.Calendars.CONTENT_URI
+                /*
+                val selection: String = "((${CalendarContract.Calendars.ACCOUNT_NAME} = ?) AND (" +
+                        "${CalendarContract.Calendars.ACCOUNT_TYPE} = ?) AND (" +
+                        "${CalendarContract.Calendars.OWNER_ACCOUNT} = ?))"
+                val selectionArgs: Array<String> = arrayOf("kdlrlgusk@naver.com", "com.example")
+                val cur: Cursor = context!!.contentResolver.query(uri, EVENT_PROJECTION, selection, selectionArgs, null)!!
+
+                 */
+                val cur: Cursor = context!!.contentResolver.query(uri, EVENT_PROJECTION, null, null, null)!!
+
+                // Use the cursor to step through the returned records
+                while (cur.moveToNext()) {
+                    // Get the field values
+                    val calID: Long = cur.getLong(PROJECTION_ID_INDEX)
+                    val displayName: String = cur.getString(PROJECTION_DISPLAY_NAME_INDEX)
+                    val accountName: String = cur.getString(PROJECTION_ACCOUNT_NAME_INDEX)
+                    val ownerName: String = cur.getString(PROJECTION_OWNER_ACCOUNT_INDEX)
+                    // Do something with the values...
+                    println("calID : " + calID)
+                    println("displayName : " + displayName)
+                    println("accountName : " + accountName)
+                    println("ownerName : " + ownerName)
+                }
             }
             R.id.fab_text -> {
                 toggleFab()

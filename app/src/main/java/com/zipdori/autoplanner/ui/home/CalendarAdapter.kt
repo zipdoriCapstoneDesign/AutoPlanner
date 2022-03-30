@@ -16,23 +16,27 @@ import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.zipdori.autoplanner.R
+import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
+import com.zipdori.autoplanner.ui.home.HomeFragment
 import com.zipdori.autoplanner.ui.home.ItemSchedule
 import com.zipdori.autoplanner.ui.home.ScheduleListAdapter
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class CalendarAdapter(context: Context, monthFrom1902: Int) : BaseAdapter() {
-    private var dateArray: ArrayList<Date>
+class CalendarAdapter(context: Context, calendar: Calendar, val schedules: HashMap<String, ArrayList<EventsVO>>) : BaseAdapter() {
     private val context: Context
-    private val dateManager: DateManager
     private val layoutInflater: LayoutInflater
+    private val calendar: Calendar = Calendar.getInstance()
+    private val dateManager: DateManager
+    private var dateArray: ArrayList<Date>
 
     init {
         this.context = context
         layoutInflater = LayoutInflater.from(this.context)
-        dateManager = DateManager()
-        dateArray = dateManager.getDays(monthFrom1902)
+        this.calendar.time = calendar.time
+        dateManager = DateManager(this.calendar)
+        dateArray = dateManager.getDays()
     }
 
     private class ViewHolder {
@@ -125,11 +129,30 @@ class CalendarAdapter(context: Context, monthFrom1902: Int) : BaseAdapter() {
             tvDateDss.setTextColor(colorId)
             tvDayDss.setTextColor(colorId)
 
-            // TODO: 2022-03-18 일정 저장할 방법 찾고 해당 날짜의 일정 추가하기
+            // TODO: 2022-03-18 일정 저장할 방법 찾기
             val itemScheduleArrayList: ArrayList<ItemSchedule> = ArrayList()
-            itemScheduleArrayList.add(ItemSchedule(context.getColor(R.color.holiday), "Test schedule 1", "하루종일"))
-            itemScheduleArrayList.add(ItemSchedule(context.getColor(R.color.holiday), "Test schedule 2", "하루종일"))
-            itemScheduleArrayList.add(ItemSchedule(context.getColor(R.color.user_schedule), "테스트 스케쥴 3", "하루종일"))
+            val eventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
+            if (eventsVOArrayList != null) {
+                eventsVOArrayList.forEach {
+                    val tvScheduleTime: String =
+                        if (it.allDay.equals("1")) {
+                            "하루종일"
+                        } else {
+                            var string: String = ""
+
+                            val calendar = Calendar.getInstance()
+                            calendar.timeInMillis = it.dtStart.toLong()
+                            string += SimpleDateFormat("a hh:mm ~ ", Locale.US).format(calendar.time)
+                            if (it.dtEnd != null) {
+                                calendar.timeInMillis = it.dtEnd!!.toLong()
+                                string += SimpleDateFormat("a hh:mm", Locale.US).format(calendar.time)
+                            }
+                            string
+                        }
+                    itemScheduleArrayList.add(ItemSchedule(context.getColor(R.color.holiday), it.title, tvScheduleTime))
+                }
+            }
+
             var scheduleListAdapter: ScheduleListAdapter = ScheduleListAdapter(context, itemScheduleArrayList)
             rvDss.layoutManager = LinearLayoutManager(context)
             rvDss.adapter = scheduleListAdapter
@@ -156,7 +179,7 @@ class CalendarAdapter(context: Context, monthFrom1902: Int) : BaseAdapter() {
 
     fun getTitle(): String {
         val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM", Locale.US)
-        return simpleDateFormat.format(dateManager.calendar.time)
+        return simpleDateFormat.format(calendar.time)
     }
 
     // TODO: 2022-03-16 Delete

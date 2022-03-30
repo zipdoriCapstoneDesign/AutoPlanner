@@ -27,6 +27,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBar
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentActivity
+import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -397,12 +398,12 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
 
-                Flags.FLAG_REQ_CAMERA -> {
+                Consts.FLAG_REQ_CAMERA -> {
                     selectedImageUri = pManager.selectedImageUri
                     binding.uploadedImage.setImageURI(selectedImageUri)
                 }
 
-                Flags.GET_GALLERY_IMAGE -> {
+                Consts.GET_GALLERY_IMAGE -> {
                     if (data != null && data.data != null) {
                         selectedImageUri = data.data
                         binding.uploadedImage.setImageURI(selectedImageUri)
@@ -425,7 +426,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
 
         when(requestCode){
-            Flags.FLAG_PERM_STORAGE_FOR_CAMERA ->{
+            Consts.FLAG_PERM_STORAGE_FOR_CAMERA ->{
                 for(grant in grantResults){
                     if(grant != PackageManager.PERMISSION_GRANTED){
            //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
@@ -440,7 +441,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 //카메라 호출 메소드
                 pManager.openCamera()
             }
-            Flags.FLAG_PERM_CAMERA -> {
+            Consts.FLAG_PERM_CAMERA -> {
                 for (grant in grantResults) {
                     if (grant != PackageManager.PERMISSION_GRANTED) {
                         Toast.makeText(
@@ -453,7 +454,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 }
                 pManager.openCamera()
             }
-            Flags.FLAG_PERM_STORAGE -> {
+            Consts.FLAG_PERM_STORAGE -> {
                 for (grant in grantResults) {
                     if (grant != PackageManager.PERMISSION_GRANTED) {
                         //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다

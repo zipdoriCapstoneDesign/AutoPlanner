@@ -1,5 +1,6 @@
 package com.zipdori.autoplanner
 
+import android.Manifest
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
@@ -11,6 +12,7 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
 import com.zipdori.autoplanner.databinding.ActivityMainBinding
+import com.zipdori.autoplanner.modules.PermissionModule
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,6 +44,17 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
+        val NEED_PERMISSIONS = arrayOf(
+            Manifest.permission.READ_CALENDAR,
+            Manifest.permission.WRITE_CALENDAR
+        )
+        val NEED_PERMISSIONS_FLAGS = arrayOf(
+            Consts.FLAG_PERM_CALENDAR,
+            Consts.FLAG_PERM_CALENDAR
+        )
+
+        PermissionModule.requestPermissionsIfNotExists(NEED_PERMISSIONS, NEED_PERMISSIONS_FLAGS, this)
     }
 
     override fun onBackPressed() {

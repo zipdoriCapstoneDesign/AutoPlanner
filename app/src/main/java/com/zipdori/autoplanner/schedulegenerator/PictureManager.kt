@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.provider.MediaStore
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.modules.PermissionModule
 import java.text.SimpleDateFormat
 import java.util.*
@@ -26,9 +27,9 @@ class PictureManager(accessedActivity: AppCompatActivity) : AppCompatActivity() 
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
         val NEED_PERMISSIONS_FLAGS = arrayOf(
-            Flags.FLAG_PERM_CAMERA,
-            Flags.FLAG_PERM_STORAGE_FOR_CAMERA,
-            Flags.FLAG_PERM_STORAGE_FOR_CAMERA
+            Consts.FLAG_PERM_CAMERA,
+            Consts.FLAG_PERM_STORAGE_FOR_CAMERA,
+            Consts.FLAG_PERM_STORAGE_FOR_CAMERA
         )
 
         // TODO: 2022-03-25 리퀘스트 체크 2가지 다
@@ -41,7 +42,7 @@ class PictureManager(accessedActivity: AppCompatActivity) : AppCompatActivity() 
             // Log.d("selectedURI", selectedImageUri.toString())
             val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
-            guestActivity.startActivityForResult(takePictureIntent, Flags.FLAG_REQ_CAMERA)
+            guestActivity.startActivityForResult(takePictureIntent, Consts.FLAG_REQ_CAMERA)
         }
     }
 
@@ -51,13 +52,13 @@ class PictureManager(accessedActivity: AppCompatActivity) : AppCompatActivity() 
             Manifest.permission.WRITE_EXTERNAL_STORAGE
         )
         val NEED_PERMISSIONS_FLAGS = arrayOf(
-            Flags.FLAG_PERM_STORAGE,
-            Flags.FLAG_PERM_STORAGE
+            Consts.FLAG_PERM_STORAGE,
+            Consts.FLAG_PERM_STORAGE
         )
         if (PermissionModule.requestPermissionsIfNotExists(NEED_PERMISSIONS, NEED_PERMISSIONS_FLAGS, guestActivity)) {
             val intent = Intent(Intent.ACTION_PICK)
             intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
-            guestActivity.startActivityForResult(intent, Flags.GET_GALLERY_IMAGE)
+            guestActivity.startActivityForResult(intent, Consts.GET_GALLERY_IMAGE)
         }
     }
 
