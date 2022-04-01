@@ -1,11 +1,8 @@
 package com.zipdori.autoplanner.ui.home
 
 import android.content.Intent
-import android.database.Cursor
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.provider.CalendarContract
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -79,6 +76,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabOpen = AnimationUtils.loadAnimation(context, R.anim.fab_open)
         fabClose = AnimationUtils.loadAnimation(context, R.anim.fab_close)
 
+        // 기존 일정 불러오기
         val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(context!!)
         val allEvents: ArrayList<EventsVO> = calendarProviderModule.selectAllEvents()
 
@@ -94,13 +92,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
             }
             tempArray.add(it)
             schedules.put(simpleDateFormat.format(calendar.time), tempArray)
-        }
-
-        val arrayList: java.util.ArrayList<EventsVO>? = schedules.get("2022.03.15")
-        if (arrayList != null) {
-            arrayList.forEach {
-                println(it.title + it.dtStart + it.dtEnd)
-            }
         }
 
         // GridView 를 위한 CalendarAdapter
