@@ -3,12 +3,14 @@ package com.zipdori.autoplanner.ui.home
 import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
+
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
+
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -26,6 +28,7 @@ import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_CAMERA
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
+import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
@@ -82,6 +85,25 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         fabOpen = AnimationUtils.loadAnimation(context, R.anim.fab_open)
         fabClose = AnimationUtils.loadAnimation(context, R.anim.fab_close)
+
+
+        // 기존 일정 불러오기
+        val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(context!!)
+        val allEvents: ArrayList<EventsVO> = calendarProviderModule.selectAllEvents()
+
+        allEvents.forEach {
+            val calendar: Calendar = Calendar.getInstance()
+            calendar.timeInMillis = it.dtStart.toLong()
+
+            val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
+
+            var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(calendar.time))
+            if (tempArray == null) {
+                tempArray = ArrayList()
+            }
+            tempArray.add(it)
+            schedules.put(simpleDateFormat.format(calendar.time), tempArray)
+        }
 
 
         // GridView 를 위한 CalendarAdapter
