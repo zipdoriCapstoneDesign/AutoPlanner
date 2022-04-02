@@ -1,6 +1,8 @@
 package com.zipdori.autoplanner.schedulegenerator
 
+import android.Manifest
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -19,6 +21,7 @@ import androidx.core.content.ContextCompat
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
+import android.provider.MediaStore
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
@@ -29,6 +32,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentActivity
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
+import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calMdForm
+import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calhmForm
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -44,8 +49,6 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
     //처음 컬러피커 버튼 색상. 이것도 적당히 초기화
     var coloredBtnColor: Int = coloredBtnStartColor
-
-    val pManager: PictureManager = PictureManager(this)
     var selectedImageUri: Uri? = null
 
     //같은 레이아웃을 쓰는 기간 설정 버튼 기간 시작일인지 종료일인지 나누는 플래그
@@ -60,9 +63,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
     var planTo: Calendar = Calendar.getInstance()
     var tempCal:Calendar? = null // 연월일 설정시 캘린더에서 날짜를 눌러대면 등록 버튼 누를 때까지 바로 적용되지 않게 임시 캘린더 변수
 
-    val calYearForm: DateFormat = SimpleDateFormat("yyyy년")
-    val calMdForm = SimpleDateFormat("MM월 dd일")
-    val calhmForm = SimpleDateFormat("a h시 mm분", Locale.KOREA)
+
 
     ////로그 확인 시 참고 형태 Log.e("btemp", calCheckForm.format(tempCal!!.time))
     val calCheckForm = SimpleDateFormat("yy.MM.dd hh:mm")
@@ -123,10 +124,19 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 setInfoByTimeButton(FLAG_TO)
             }
             R.id.uploadImage -> {
-                pManager.openCamera()
+                val NEED_PERMISSIONS = arrayOf(
+                    Manifest.permission.CAMERA,
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                )
+                requestPermissions(NEED_PERMISSIONS,Consts.FLAG_PERM_CAMERA)
             }
             R.id.uploadImageFromGallery -> {
-                pManager.openGallery()
+                val NEED_PERMISSIONS = arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                )
+                requestPermissions(NEED_PERMISSIONS,Consts.FLAG_PERM_STORAGE)
             }
             // TODO: 2022-03-27 이미지뷰에 채운 사진 없애는 기능
             R.id.uploadedImage -> {
@@ -397,9 +407,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
-
                 Consts.FLAG_REQ_CAMERA -> {
-                    selectedImageUri = pManager.selectedImageUri
                     binding.uploadedImage.setImageURI(selectedImageUri)
                 }
 
@@ -424,25 +432,11 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-
         when(requestCode){
-            Consts.FLAG_PERM_STORAGE_FOR_CAMERA ->{
-                for(grant in grantResults){
-                    if(grant != PackageManager.PERMISSION_GRANTED){
-           //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
-                        Toast.makeText(
-                            this,
-                            "저장소 권한을 승인해야지만 앱을 사용할 수 있습니다. 앱 정보에서 승인해주세요.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        return
-                    }
-                }
-                //카메라 호출 메소드
-                pManager.openCamera()
-            }
             Consts.FLAG_PERM_CAMERA -> {
+                Log.e("승인절차","카메라")
                 for (grant in grantResults) {
+                    Log.e("승인절차",grant.toString())
                     if (grant != PackageManager.PERMISSION_GRANTED) {
                         Toast.makeText(
                             this,
@@ -452,7 +446,14 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                         return
                     }
                 }
-                pManager.openCamera()
+                Log.e("승인절차","카메라 승인 확인")
+                val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+                val uri: Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
+                selectedImageUri = uri
+
+                val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
+                startActivityForResult(takePictureIntent, Consts.FLAG_REQ_CAMERA)
             }
             Consts.FLAG_PERM_STORAGE -> {
                 for (grant in grantResults) {
@@ -466,9 +467,20 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                         return
                     }
                 }
-                pManager.openGallery()
+                val intent = Intent(Intent.ACTION_PICK)
+                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+                startActivityForResult(intent, Consts.GET_GALLERY_IMAGE)
             }
         }
     }
 
+    private fun createImageUri(filename: String, mimeType: String): Uri? {
+        var values = ContentValues()
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, filename)
+        values.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+        return this.contentResolver.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            values
+        )
+    }
 }

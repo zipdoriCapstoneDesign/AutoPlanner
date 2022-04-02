@@ -1,7 +1,9 @@
 package com.zipdori.autoplanner
 
 import android.Manifest
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
@@ -79,5 +81,18 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when(requestCode){
+            Consts.GET_GALLERY_IMAGE ->{
+                Toast.makeText(
+                    this,
+                    "여기 아닌데",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        }
     }
 }
