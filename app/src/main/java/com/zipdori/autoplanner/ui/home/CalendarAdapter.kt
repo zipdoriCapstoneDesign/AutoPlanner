@@ -17,7 +17,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
-import com.zipdori.autoplanner.ui.home.HomeFragment
 import com.zipdori.autoplanner.ui.home.ItemSchedule
 import com.zipdori.autoplanner.ui.home.ScheduleListAdapter
 import java.text.SimpleDateFormat
@@ -129,13 +128,24 @@ class CalendarAdapter(context: Context, calendar: Calendar, val schedules: HashM
             tvDateDss.setTextColor(colorId)
             tvDayDss.setTextColor(colorId)
 
-            // TODO: 2022-03-18 일정 저장할 방법 찾기
             val itemScheduleArrayList: ArrayList<ItemSchedule> = ArrayList()
             val eventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
             if (eventsVOArrayList != null) {
                 eventsVOArrayList.forEach {
+                    val eventColor: Int =
+                        if (it.eventColor == 0) {
+                            it.displayColor
+                        } else {
+                            it.eventColor!!
+                        }
+                    val title: String =
+                        if (it.title == null) {
+                            "내 일정"
+                        } else {
+                            it.title!!
+                        }
                     val tvScheduleTime: String =
-                        if (it.allDay.equals("1")) {
+                        if (it.allDay!!.equals("1")) {
                             "하루종일"
                         } else {
                             var string: String = ""
@@ -149,7 +159,8 @@ class CalendarAdapter(context: Context, calendar: Calendar, val schedules: HashM
                             }
                             string
                         }
-                    itemScheduleArrayList.add(ItemSchedule(context.getColor(R.color.holiday), it.title, tvScheduleTime))
+
+                    itemScheduleArrayList.add(ItemSchedule(eventColor, title, tvScheduleTime))
                 }
             }
 

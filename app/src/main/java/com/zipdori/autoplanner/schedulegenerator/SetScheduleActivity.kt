@@ -7,34 +7,31 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
-import android.util.Log
-import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
-import com.google.android.material.snackbar.Snackbar
-import petrov.kristiyan.colorpicker.ColorPicker
-import petrov.kristiyan.colorpicker.ColorPicker.OnChooseColorListener
-
-import androidx.core.content.ContextCompat
-//import android.R
-
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.Window
 import android.widget.*
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBar
+import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import com.google.android.material.snackbar.Snackbar
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
+import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
+import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calMdForm
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calhmForm
-import java.text.DateFormat
+import petrov.kristiyan.colorpicker.ColorPicker
+import petrov.kristiyan.colorpicker.ColorPicker.OnChooseColorListener
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -101,9 +98,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
         binding.backButton.setOnClickListener() {
             finish()
         }
-        binding.regButton.setOnClickListener() {
-            binding.regButton.text = "눌림"
-        }
+        binding.regButton.setOnClickListener(this)
     }
 
     // OnClick 코드들
@@ -161,8 +156,20 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                     alertDialog.dismiss()
                 }
             }
+            R.id.regButton -> {
+                val calendarId = 1
+                val title = binding.tietScheduleTitle.text.toString()
+                val description = binding.etScheduleDescription
+                val dtStart = planFrom.timeInMillis
+                val dtEnd = planTo.timeInMillis
+                val eventTimeZone = "UTC"
 
+                val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(applicationContext)
+                calendarProviderModule.insertEvent(calendarId, title, null, description.text.toString(), coloredBtnColor, dtStart, dtEnd, eventTimeZone, null, null, null, null)
 
+                finish()
+                // TODO: 2022-04-05 등록 시 HomeFragment에 바로 적용이 되어 등록된 일정이 보이도록 설정
+            }
         }
     }
 

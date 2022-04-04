@@ -88,23 +88,26 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
 
         // 기존 일정 불러오기
+        schedules.clear()
+
         val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(context!!)
         val allEvents: ArrayList<EventsVO> = calendarProviderModule.selectAllEvents()
 
         allEvents.forEach {
-            val calendar: Calendar = Calendar.getInstance()
-            calendar.timeInMillis = it.dtStart.toLong()
+            if (it.deleted != 1) {
+                val calendar: Calendar = Calendar.getInstance()
+                calendar.timeInMillis = it.dtStart
 
-            val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
+                val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
 
-            var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(calendar.time))
-            if (tempArray == null) {
-                tempArray = ArrayList()
+                var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(calendar.time))
+                if (tempArray == null) {
+                    tempArray = ArrayList()
+                }
+                tempArray.add(it)
+                schedules.put(simpleDateFormat.format(calendar.time), tempArray)
             }
-            tempArray.add(it)
-            schedules.put(simpleDateFormat.format(calendar.time), tempArray)
         }
-
 
         // GridView 를 위한 CalendarAdapter
         val calendarAdapterArrayList: ArrayList<CalendarAdapter> = ArrayList()
