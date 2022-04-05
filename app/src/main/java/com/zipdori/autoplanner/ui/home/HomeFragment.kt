@@ -3,14 +3,12 @@ package com.zipdori.autoplanner.ui.home
 import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
-
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.util.Log
-
 import android.view.*
 import android.view.animation.Animation
 import android.view.animation.AnimationUtils
@@ -29,6 +27,7 @@ import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
+import com.zipdori.autoplanner.modules.calendarprovider.CalendarsVO
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity

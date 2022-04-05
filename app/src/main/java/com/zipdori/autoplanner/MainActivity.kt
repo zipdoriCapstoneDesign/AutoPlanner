@@ -1,8 +1,11 @@
 package com.zipdori.autoplanner
 
 import android.Manifest
+import android.content.Context
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.provider.CalendarContract
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.GravityCompat
@@ -15,6 +18,8 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
 import com.zipdori.autoplanner.databinding.ActivityMainBinding
 import com.zipdori.autoplanner.modules.PermissionModule
+import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
+import com.zipdori.autoplanner.modules.calendarprovider.CalendarsVO
 
 class MainActivity : AppCompatActivity() {
 
@@ -110,6 +115,51 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
+        createCalendarIfNotExist()
+        setCalendarIndex()
     }
 
+    private fun createCalendarIfNotExist() {
+        if (!isCalendarExist()) {
+            val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(applicationContext)
+
+            calendarProviderModule.insertCalendar(
+                "AutoPlanner",
+                "AutoPlanner",
+                1,
+                "AutoPlanner",
+                CalendarContract.ACCOUNT_TYPE_LOCAL,
+                -10572033,
+                700,
+                "AutoPlanner",
+                "UTC"
+            )
+        }
+    }
+
+    private fun isCalendarExist(): Boolean {
+        val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(applicationContext)
+        val allCalendars: ArrayList<CalendarsVO> = calendarProviderModule.selectAllCalendars()
+        allCalendars.forEach {
+            if (it.name.equals("AutoPlanner") && it.accountName.equals("AutoPlanner") && it.accountType.equals("LOCAL") && it.ownerAccount.equals("AutoPlanner"))
+                return true
+        }
+
+        return false
+    }
+
+    private fun setCalendarIndex() {
+        val sharedPreferences: SharedPreferences = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+
+
+        val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(applicationContext)
+        val allCalendars: ArrayList<CalendarsVO> = calendarProviderModule.selectAllCalendars()
+        allCalendars.forEach {
+            if (it.name.equals("AutoPlanner") && it.accountName.equals("AutoPlanner") && it.accountType.equals("LOCAL") && it.ownerAccount.equals("AutoPlanner")) {
+                sharedPreferences.edit().putLong(getString(R.string.calendar_index), it.id).apply()
+                return
+            }
+        }
+    }
 }

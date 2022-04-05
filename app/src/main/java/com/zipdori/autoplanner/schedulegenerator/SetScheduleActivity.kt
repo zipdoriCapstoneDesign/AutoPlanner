@@ -3,7 +3,9 @@ package com.zipdori.autoplanner.schedulegenerator
 import android.Manifest
 import android.app.Activity
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -157,7 +159,9 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 }
             }
             R.id.regButton -> {
-                val calendarId = 1
+                val sharedPreferences: SharedPreferences = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+
+                val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
                 val title = binding.tietScheduleTitle.text.toString()
                 val description = binding.etScheduleDescription
                 val dtStart = planFrom.timeInMillis

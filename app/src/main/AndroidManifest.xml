@@ -16,9 +16,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AutoPlanner">
         <activity
-            android:name=".schedulegenerator.PictureManager"
-            android:exported="true" />
-        <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
