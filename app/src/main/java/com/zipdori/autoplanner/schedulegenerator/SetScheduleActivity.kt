@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
 import com.google.android.material.snackbar.Snackbar
 import com.zipdori.autoplanner.Consts
+import com.zipdori.autoplanner.MainActivity
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
@@ -171,8 +172,9 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(applicationContext)
                 calendarProviderModule.insertEvent(calendarId, title, null, description.text.toString(), coloredBtnColor, dtStart, dtEnd, eventTimeZone, null, null, null, null)
 
-                finish()
-                // TODO: 2022-04-05 등록 시 HomeFragment에 바로 적용이 되어 등록된 일정이 보이도록 설정
+                val intent = Intent(this, MainActivity::class.java).apply {}
+                setResult(RESULT_OK, intent)
+                if (!isFinishing) finish()
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.zipdori.autoplanner.ui.home
 
 import android.Manifest
+import android.app.Activity.RESULT_OK
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,6 +15,8 @@ import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -61,6 +64,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     val schedules: HashMap<String, ArrayList<EventsVO>> = HashMap()
 
+    private lateinit var getResultText: ActivityResultLauncher<Intent>
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -85,51 +90,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabOpen = AnimationUtils.loadAnimation(context, R.anim.fab_open)
         fabClose = AnimationUtils.loadAnimation(context, R.anim.fab_close)
 
-
-        // 기존 일정 불러오기
-        schedules.clear()
-
-        val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(context!!)
-        val allEvents: ArrayList<EventsVO> = calendarProviderModule.selectAllEvents()
-
-        allEvents.forEach {
-            if (it.deleted != 1) {
-                val calendar: Calendar = Calendar.getInstance()
-                calendar.timeInMillis = it.dtStart
-
-                val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
-
-                var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(calendar.time))
-                if (tempArray == null) {
-                    tempArray = ArrayList()
-                }
-                tempArray.add(it)
-                schedules.put(simpleDateFormat.format(calendar.time), tempArray)
-            }
-        }
-
-        // GridView 를 위한 CalendarAdapter
-        val calendarAdapterArrayList: ArrayList<CalendarAdapter> = ArrayList()
-        val calendar: Calendar = Calendar.getInstance()
-        calendar.set(Calendar.YEAR, 1902)
-        calendar.set(Calendar.MONTH, 0)
-        calendar.set(Calendar.DATE, 1)
-        for (i in 0 until 2400) {
-            calendarAdapterArrayList.add(CalendarAdapter(context!!, calendar, schedules))
-            calendar.add(Calendar.MONTH, 1)
-        }
-
-        // ViewPager2 어댑터 및 초기 설정
-        viewPager2.adapter = ViewPager2Adapter(context!!, calendarAdapterArrayList)
-        viewPager2.orientation = ViewPager2.ORIENTATION_HORIZONTAL
-        viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                tvYYYYMM.text = (viewPager2.adapter as ViewPager2Adapter).calendarAdapterArrayList.get(position).getTitle()
-
-                super.onPageSelected(position)
-            }
-        })
-        setViewPager2CurMonth(false)
+        initCalendar()
 
         fabAI.setOnClickListener(this)
         fabPhoto.setOnClickListener(this)
@@ -138,6 +99,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabAdd.setOnClickListener(this)
 
         autoPlannerDBModule = AutoPlannerDBModule(context)
+
+        getResultText = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                // TODO: 2022-04-06 더 효율적인 방법 구상하기 
+                initCalendar()
+            }
+        }
 
         return root
     }
@@ -215,7 +184,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
                 intent.putExtra("FromDate", fromCal.timeInMillis)
                 intent.putExtra("ToDate", toCal.timeInMillis)
-                startActivity(intent)
+               // startActivity(intent)
+
+                getResultText.launch(intent)
             }
         }
     }
@@ -319,5 +290,54 @@ class HomeFragment : Fragment(), View.OnClickListener {
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             values
         )
+    }
+
+    private fun initCalendar() {
+        // 기존 일정 불러오기
+        schedules.clear()
+
+        val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(context!!)
+        val allEvents: ArrayList<EventsVO> = calendarProviderModule.selectAllEvents()
+
+        allEvents.forEach {
+            if (it.deleted != 1) {
+                val calendar: Calendar = Calendar.getInstance()
+                calendar.timeInMillis = it.dtStart
+
+                val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
+
+                var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(calendar.time))
+                if (tempArray == null) {
+                    tempArray = ArrayList()
+                }
+                tempArray.add(it)
+                schedules.put(simpleDateFormat.format(calendar.time), tempArray)
+            }
+        }
+
+        // GridView 를 위한 CalendarAdapter
+        val calendarAdapterArrayList: ArrayList<CalendarAdapter> = ArrayList()
+        val calendar: Calendar = Calendar.getInstance()
+        calendar.set(Calendar.YEAR, 1902)
+        calendar.set(Calendar.MONTH, 0)
+        calendar.set(Calendar.DATE, 1)
+        for (i in 0 until 2400) {
+            calendarAdapterArrayList.add(CalendarAdapter(context!!, calendar, schedules))
+            calendar.add(Calendar.MONTH, 1)
+        }
+
+        // ViewPager2 어댑터 및 초기 설정
+        val viewPager2Adapter: ViewPager2Adapter = ViewPager2Adapter(context!!, calendarAdapterArrayList)
+        viewPager2.adapter = viewPager2Adapter
+        viewPager2.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+        viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                tvYYYYMM.text = (viewPager2.adapter as ViewPager2Adapter).calendarAdapterArrayList.get(position).getTitle()
+
+                super.onPageSelected(position)
+            }
+        })
+
+        setViewPager2CurMonth(false)
     }
 }
