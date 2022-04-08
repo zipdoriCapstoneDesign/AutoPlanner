@@ -1,7 +1,9 @@
 package com.zipdori.autoplanner.ui.home
 
 import android.Manifest
+
 import android.app.Activity.RESULT_OK
+
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -26,13 +28,15 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.toyproject.testproject3_zipdori.ui.home.CalendarAdapter
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_CAMERA
-import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE
+import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE_MULTIPICK
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
+import com.zipdori.autoplanner.modules.App
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
-import com.zipdori.autoplanner.modules.calendarprovider.CalendarsVO
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
+import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
+
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
 import java.util.*
@@ -63,6 +67,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var autoPlannerDBModule: AutoPlannerDBModule
 
     val schedules: HashMap<String, ArrayList<EventsVO>> = HashMap()
+    var imgList = ArrayList<Uri>() //사진 다중 선택할 때 사진 Uri 담는 리스트
 
     private lateinit var getResultText: ActivityResultLauncher<Intent>
 
@@ -155,7 +160,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 )
 
                 requestPermissions(NEED_PERMISSIONS, FLAG_PERM_CAMERA)
-                //pManager.openCamera()
+
             }
             R.id.fab_gallery -> {
                 toggleFab()
@@ -166,7 +171,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     Manifest.permission.WRITE_EXTERNAL_STORAGE
                 )
 
-                requestPermissions(NEED_PERMISSIONS, FLAG_PERM_STORAGE)
+                requestPermissions(NEED_PERMISSIONS, FLAG_PERM_STORAGE_MULTIPICK)
+
             }
             R.id.fab_text -> {
                 toggleFab()
@@ -185,6 +191,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 intent.putExtra("FromDate", fromCal.timeInMillis)
                 intent.putExtra("ToDate", toCal.timeInMillis)
                // startActivity(intent)
+
+
 
                 getResultText.launch(intent)
             }
@@ -229,6 +237,33 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     "아직 넘길 액티비티가 없어요. (갤러리)",
                     Toast.LENGTH_SHORT
                 ).show()
+            }
+            Consts.GET_GALLERY_IMAGE_MULTI->{
+                imgList.clear()
+                if(data?.clipData != null){
+                    val count = data.clipData!!.itemCount
+                    Log.e("선택한 사진 수",count.toString())
+                    if (count > 5) {
+                        Toast.makeText(App.context(), "사진은 5장까지 선택 가능합니다.", Toast.LENGTH_LONG).show()
+                        return
+                    }
+                    for (i in 0 until count) {
+                        val imageUri = data.clipData!!.getItemAt(i).uri
+                        imgList.add(imageUri)
+                        Log.e("imgList에 넣는 주소", imageUri.toString())
+                    }
+                } else { // 단일 선택
+                    data?.data?.let { uri ->
+                        val imageUri : Uri? = data?.data
+                        if (imageUri != null) {
+                            imgList.add(imageUri)
+                        }
+                    }
+
+                }
+                val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                intent.putParcelableArrayListExtra("imgURIs",imgList)
+                startActivity(intent)
             }
         }
     }
@@ -278,6 +313,26 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 val intent = Intent(Intent.ACTION_PICK)
                 intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
                 startActivityForResult(intent, Consts.GET_GALLERY_IMAGE)
+            }
+            Consts.FLAG_PERM_STORAGE_MULTIPICK -> {
+                for (grant in grantResults) {
+                    if (grant != PackageManager.PERMISSION_GRANTED) {
+                        //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
+                        Toast.makeText(
+                            context,
+                            "저장소 권한을 승인해야지만 앱을 사용할 수 있습니다..",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return
+                    }
+                }
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+
+                startActivityForResult(intent, Consts.GET_GALLERY_IMAGE_MULTI)
+
+
             }
         }
     }

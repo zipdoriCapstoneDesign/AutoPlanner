@@ -129,35 +129,36 @@
                 <ImageView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="center"
                     android:layout_margin="10dp"
-                    android:background="@drawable/ic_baseline_photo_camera_24"
-                    android:layout_gravity="center"></ImageView>
+                    android:background="@drawable/ic_baseline_photo_camera_24"></ImageView>
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/uploadImage"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="10dp"
-                    android:text="촬영"
-                    android:textSize="20sp"
                     android:foreground="?attr/selectableItemBackground"
-                    android:gravity="center"/>
+                    android:gravity="center"
+                    android:text="촬영"
+                    android:textSize="20sp" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/uploadImageFromGallery"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_margin="10dp"
-                    android:text="갤러리"
-                    android:textSize="20sp"
                     android:foreground="?attr/selectableItemBackground"
-                    android:gravity="center"/>
+                    android:gravity="center"
+                    android:text="갤러리"
+                    android:textSize="20sp" />
             </LinearLayout>
 
             <ImageView
                 android:id="@+id/uploadedImage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center"
                 android:scaleType="fitCenter" />
         </LinearLayout>
 

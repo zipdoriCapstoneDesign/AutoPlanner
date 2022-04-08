@@ -17,154 +17,76 @@ class AutoPlannerDBModule(context: Context?) {
         autoPlannerDBHelper.onCreate(db)
     }
 
-    fun initSchedule() {
+    fun initExtraInfo() {
         autoPlannerDBHelper.initSchedule(db)
     }
 
-    fun selectAllSchedule() {
-        val cursor: Cursor = db.query("schedule", null, null, null, null, null, null, null)
+    fun selectAllExtraInfo() {
+        val cursor: Cursor = db.query("extra_info", null, null, null, null, null, null, null)
 
         val schedule: ArrayList<HashMap<String, String>> = ArrayList()
         while (cursor.moveToNext()) {
             val _id: Int = cursor.getInt(cursor.getColumnIndexOrThrow("_id"))
-            val startTime: Timestamp = Timestamp.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("start_time")))
-            val endTime: Timestamp = Timestamp.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("end_time")))
-            val title: String = cursor.getString(cursor.getColumnIndexOrThrow("title"))
-            val notes: String = cursor.getString(cursor.getColumnIndexOrThrow("notes"))
+            val eventId: Long = cursor.getLong(cursor.getColumnIndexOrThrow("event_id"))
             val photo: String = cursor.getString(cursor.getColumnIndexOrThrow("photo"))
-            val lat: Float = cursor.getFloat(cursor.getColumnIndexOrThrow("lat"))
-            val lng: Float = cursor.getFloat(cursor.getColumnIndexOrThrow("lng"))
+
 
             val hashMap: HashMap<String, String> = HashMap()
             hashMap.put("_id", _id.toString())
-            hashMap.put("start_time", startTime.toString())
-            hashMap.put("end_time", endTime.toString())
-            hashMap.put("title", title)
-            hashMap.put("notes", notes)
+            hashMap.put("event_id", eventId.toString())
             hashMap.put("photo", photo)
-            hashMap.put("lat", lat.toString())
-            hashMap.put("lng", lng.toString())
 
             schedule.add(hashMap)
         }
         for (i in schedule) {
             println("_id=" + i.get("_id") +
-                    ", start_time=" + i.get("start_time") +
-                    ", end_time=" + i.get("end_time") +
-                    ", title=" + i.get("title") +
-                    ", notes=" + i.get("notes") +
-                    ", photo=" + i.get("photo") +
-                    ", lat=" + i.get("lat") +
-                    ", lng=" + i.get("lng"))
+                    ", event_id=" + i.get("event_id") +
+                    ", photo=" + i.get("photo"))
         }
     }
 
-    fun selectSchedule(id: Int) {
-        val cursor: Cursor = db.query("schedule", null, null, null, null, null, null, null)
+    fun selectExtraInfo(id: Int) {
+        val cursor: Cursor = db.query("extra_info", null, null, null, null, null, null, null)
 
         val schedule: ArrayList<HashMap<String, String>> = ArrayList()
         while (cursor.moveToNext()) {
             val _id: Int = cursor.getInt(cursor.getColumnIndexOrThrow("_id"))
-            val startTime: Timestamp = Timestamp.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("start_time")))
-            val endTime: Timestamp = Timestamp.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("end_time")))
-            val title: String = cursor.getString(cursor.getColumnIndexOrThrow("title"))
-            val notes: String = cursor.getString(cursor.getColumnIndexOrThrow("notes"))
+            val eventId: Long = cursor.getLong(cursor.getColumnIndexOrThrow("event_id"))
             val photo: String = cursor.getString(cursor.getColumnIndexOrThrow("photo"))
-            val lat: Float = cursor.getFloat(cursor.getColumnIndexOrThrow("lat"))
-            val lng: Float = cursor.getFloat(cursor.getColumnIndexOrThrow("lng"))
 
             if (_id == id) {
                 val hashMap: HashMap<String, String> = HashMap()
                 hashMap.put("_id", _id.toString())
-                hashMap.put("start_time", startTime.toString())
-                hashMap.put("end_time", endTime.toString())
-                hashMap.put("title", title)
-                hashMap.put("notes", notes)
+                hashMap.put("event_id", eventId.toString())
                 hashMap.put("photo", photo)
-                hashMap.put("lat", lat.toString())
-                hashMap.put("lng", lng.toString())
 
                 schedule.add(hashMap)
             }
         }
         for (i in schedule) {
             println("_id=" + i.get("_id") +
-                    ", start_time=" + i.get("start_time") +
-                    ", end_time=" + i.get("end_time") +
-                    ", title=" + i.get("title") +
-                    ", notes=" + i.get("notes") +
-                    ", photo=" + i.get("photo") +
-                    ", lat=" + i.get("lat") +
-                    ", lng=" + i.get("lng"))
+                    ", event_id=" + i.get("event_id") +
+                    ", photo=" + i.get("photo"))
         }
     }
 
-    fun selectScheduleByTime(timestamp: Timestamp) {
-        val cursor: Cursor = db.query("schedule", null, null, null, null, null, null, null)
-
-        val schedule: ArrayList<HashMap<String, String>> = ArrayList()
-        while (cursor.moveToNext()) {
-            val _id: Int = cursor.getInt(cursor.getColumnIndexOrThrow("_id"))
-            val startTime: Timestamp = Timestamp.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("start_time")))
-            val endTime: Timestamp = Timestamp.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("end_time")))
-            val title: String = cursor.getString(cursor.getColumnIndexOrThrow("title"))
-            val notes: String = cursor.getString(cursor.getColumnIndexOrThrow("notes"))
-            val photo: String = cursor.getString(cursor.getColumnIndexOrThrow("photo"))
-            val lat: Float = cursor.getFloat(cursor.getColumnIndexOrThrow("lat"))
-            val lng: Float = cursor.getFloat(cursor.getColumnIndexOrThrow("lng"))
-
-            if(timestamp in startTime..endTime) {
-                val hashMap: HashMap<String, String> = HashMap()
-                hashMap.put("_id", _id.toString())
-                hashMap.put("start_time", startTime.toString())
-                hashMap.put("end_time", endTime.toString())
-                hashMap.put("title", title)
-                hashMap.put("notes", notes)
-                hashMap.put("photo", photo)
-                hashMap.put("lat", lat.toString())
-                hashMap.put("lng", lng.toString())
-
-                schedule.add(hashMap)
-            }
-        }
-        for (i in schedule) {
-            println("_id=" + i.get("_id") +
-                    ", start_time=" + i.get("start_time") +
-                    ", end_time=" + i.get("end_time") +
-                    ", title=" + i.get("title") +
-                    ", notes=" + i.get("notes") +
-                    ", photo=" + i.get("photo") +
-                    ", lat=" + i.get("lat") +
-                    ", lng=" + i.get("lng"))
-        }
-    }
-
-    fun insertSchedule(startTime: Timestamp, endTime: Timestamp, title: String?, notes: String?, photo: String?, lat: Float?, lng: Float?) {
+    fun insertExtraInfo(eventId: Long, photo: String?) {
         val contentValues: ContentValues = ContentValues()
-        contentValues.put("start_time ", startTime.toString())
-        contentValues.put("end_time ", endTime.toString())
-        contentValues.put("title ", title)
-        contentValues.put("notes", notes)
+        contentValues.put("event_id", eventId.toInt())
+
         contentValues.put("photo", photo)
-        contentValues.put("lat", lat)
-        contentValues.put("lng", lng)
-        db.insert("schedule", null, contentValues)
+        db.insert("extra_info", null, contentValues)
     }
 
-    fun deleteSchedule(id: Int) {
-        db.delete("schedule", "_id=?", arrayOf(id.toString()))
+    fun deleteExtraInfo(id: Int) {
+        db.delete("extra_info", "_id=?", arrayOf(id.toString()))
     }
 
-    fun updateSchedule(id: Int, startTime: Timestamp?, endTime: Timestamp?, title: String?, notes: String?, photo: String?, lat: Float?, lng: Float?) {
+    fun updateExtraInfo(id: Int, eventId: Long, photo: String?) {
         val contentValues: ContentValues = ContentValues()
-        if (startTime != null) contentValues.put("start_time ", startTime.toString())
-        if (endTime != null) contentValues.put("end_time ", endTime.toString())
-        if (title != null) contentValues.put("title ", title)
-        if (notes != null) contentValues.put("notes", notes)
+        if (eventId != null) contentValues.put("event_id", eventId.toInt())
         if (photo != null) contentValues.put("photo", photo)
-        if (lat != null) contentValues.put("lat", lat)
-        if (lng != null) contentValues.put("lng", lng)
 
-        db.update("schedule", contentValues, "_id=?", arrayOf("_id"))
+        db.update("extra_info", contentValues, "_id=?", arrayOf(id.toString()))
     }
 }

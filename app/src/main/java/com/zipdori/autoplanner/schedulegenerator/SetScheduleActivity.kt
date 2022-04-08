@@ -17,6 +17,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import android.widget.*
 import androidx.annotation.RequiresApi
@@ -30,7 +31,9 @@ import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.MainActivity
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
+import com.zipdori.autoplanner.modules.App
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
+import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calMdForm
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calhmForm
 import petrov.kristiyan.colorpicker.ColorPicker
@@ -42,6 +45,9 @@ import kotlin.collections.ArrayList
 
 class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
     private val binding by lazy { ActivitySetScheduleBinding.inflate(layoutInflater) }
+    lateinit var eventCanvas:EventsVO
+    var imgList = ArrayList<Uri>()
+
 
     //컬러피커 관련 변수. null 관련 관리 편의상 적당히 초기화  --------------승화
     var pickedColor: String = "#5EAEFF"
@@ -138,6 +144,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
             }
             // TODO: 2022-03-27 이미지뷰에 채운 사진 없애는 기능
             R.id.uploadedImage -> {
+                if(selectedImageUri == null) return
                 val layoutInflater: LayoutInflater = (this as FragmentActivity).layoutInflater
                 val constraintLayout: ConstraintLayout = layoutInflater.inflate(
                     R.layout.schedulepicture_expanded,
@@ -146,6 +153,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
                 val expandedImage: ImageView = constraintLayout.findViewById(R.id.imageExpanded)
                 val expandedClose: Button = constraintLayout.findViewById(R.id.imgExpand_return)
+                val expandedDelete: Button = constraintLayout.findViewById(R.id.imgExpand_delete)
 
                 expandedImage.setImageURI(selectedImageUri)
                 val builder: android.app.AlertDialog.Builder = android.app.AlertDialog.Builder(this)
@@ -156,6 +164,18 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 alertDialog.show()
 
                 expandedClose.setOnClickListener {
+                    alertDialog.dismiss()
+                }
+                expandedDelete.setOnClickListener {
+                    selectedImageUri=null
+                    binding.uploadedImage.setImageURI(null)
+                    val params: ViewGroup.LayoutParams = binding.uploadedImage.layoutParams
+                    params.height = 0
+                    binding.uploadedImage.layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+
                     alertDialog.dismiss()
                 }
             }
@@ -484,6 +504,27 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
                 startActivityForResult(intent, Consts.GET_GALLERY_IMAGE)
             }
+            Consts.FLAG_PERM_STORAGE_MULTIPICK -> {
+                for (grant in grantResults) {
+                    if (grant != PackageManager.PERMISSION_GRANTED) {
+                        //권한이 승인되지 않았다면 return 을 사용하여 메소드를 종료시켜 줍니다
+                        Toast.makeText(
+                            this,
+                            "저장소 권한을 승인해야지만 앱을 사용할 수 있습니다..",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        return
+                    }
+                }
+                val intent = Intent(Intent.ACTION_GET_CONTENT)
+                intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*")
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+
+                startActivityForResult(intent, Consts.GET_GALLERY_IMAGE_MULTI)
+
+
+            }
+
         }
     }
 
