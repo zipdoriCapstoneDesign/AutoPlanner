@@ -21,21 +21,21 @@ class AutoPlannerDBHelper(
     }
 
     override fun onUpgrade(db: SQLiteDatabase?, p1: Int, p2: Int) {
-        val sql: String = "DROP TABLE IF EXISTS schedule"
+        val sql: String = "DROP TABLE IF EXISTS extra_info"
 
         db?.execSQL(sql)
         onCreate(db)
     }
 
     fun initDB(db: SQLiteDatabase?) {
-        val sql: String = "DROP TABLE IF EXISTS schedule"
+        val sql: String = "DROP TABLE IF EXISTS extra_info"
 
         db?.execSQL(sql)
         onCreate(db)
     }
 
     fun initSchedule(db: SQLiteDatabase?) {
-        val sqlDropSchedule: String = "DROP TABLE IF EXISTS schedule"
+        val sqlDropSchedule: String = "DROP TABLE IF EXISTS extra_info"
         db?.execSQL(sqlDropSchedule)
 
         val sqlCreateSchedule: String = "CREATE TABLE IF NOT EXISTS extra_info (" +

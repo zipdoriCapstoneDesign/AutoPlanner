@@ -25,7 +25,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.floatingactionbutton.FloatingActionButton
-import com.toyproject.testproject3_zipdori.ui.home.CalendarAdapter
+import com.toyproject.testproject3_zipdori.ui.home.MonthAdapter
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_CAMERA
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE_MULTIPICK
@@ -52,7 +52,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     // onDestroyView.
     private val binding get() = _binding!!
 
-    private lateinit var viewPager2: ViewPager2
+    private lateinit var vpCalendar: ViewPager2
     private lateinit var tvYYYYMM: TextView
     private lateinit var fabAI: FloatingActionButton
     private lateinit var fabPhoto: FloatingActionButton
@@ -84,7 +84,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         setHasOptionsMenu(true)
 
-        viewPager2 = binding.vpCalendar
+        vpCalendar = binding.vpCalendar
         tvYYYYMM = binding.tvYyyymm
         fabAI = binding.fabAi
         fabPhoto = binding.fabPhoto
@@ -142,7 +142,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private fun setViewPager2CurMonth(smoothScroll: Boolean) {
         val calendar: Calendar = Calendar.getInstance()
         val monthDiff = (calendar.get(Calendar.YEAR) - 1902) * 12 + calendar.get(Calendar.MONTH)
-        viewPager2.setCurrentItem(monthDiff, smoothScroll)
+        vpCalendar.setCurrentItem(monthDiff, smoothScroll)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -356,38 +356,77 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         allEvents.forEach {
             if (it.deleted != 1) {
-                val calendar: Calendar = Calendar.getInstance()
-                calendar.timeInMillis = it.dtStart
-
                 val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
 
-                var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(calendar.time))
-                if (tempArray == null) {
-                    tempArray = ArrayList()
+                val start: Calendar = Calendar.getInstance()
+                start.timeInMillis = it.dtStart
+                start.set(Calendar.HOUR, 0)
+                start.set(Calendar.MINUTE, 0)
+                start.set(Calendar.SECOND, 0)
+                if (it.dtEnd != null && it.allDay != 1) {
+                    val end: Calendar = Calendar.getInstance()
+                    end.timeInMillis = it.dtEnd!!
+
+                    while(start <= end) {
+                        var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(start.time))
+                        if (tempArray == null) {
+                            tempArray = ArrayList()
+                        }
+                        tempArray.add(it)
+                        schedules.put(simpleDateFormat.format(start.time), tempArray)
+
+                        start.set(Calendar.DATE, start.get(Calendar.DATE) + 1)
+                    }
+                } else {
+                    var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(start.time))
+                    if (tempArray == null) {
+                        tempArray = ArrayList()
+                    }
+                    tempArray.add(it)
+                    schedules.put(simpleDateFormat.format(start.time), tempArray)
                 }
-                tempArray.add(it)
-                schedules.put(simpleDateFormat.format(calendar.time), tempArray)
+
+                println(" ")
+                println("id : " + it.id)
+                println("calendarId : " + it.calendarId)
+                println("organizer : " + it.organizer)
+                println("title : " + it.title)
+                println("eventLocation : " + it.eventLocation)
+                println("description : " + it.description)
+                println("displayColor : " + it.displayColor)
+                println("eventColor : " + it.eventColor)
+                println("dtStart : " + it.dtStart)
+                println("dtEnd : " + it.dtEnd)
+                println("eventTimeZone : " + it.eventTimeZone)
+                println("duration : " + it.duration)
+                println("allDay : " + it.allDay)
+                println("rRule : " + it.rRule)
+                println("rDate : " + it.rDate)
+                println("availability : " + it.availability)
+                println("guestCanModify : " + it.guestCanModify)
+                println("deleted : " + it.deleted)
+
             }
         }
 
         // GridView 를 위한 CalendarAdapter
-        val calendarAdapterArrayList: ArrayList<CalendarAdapter> = ArrayList()
+        val monthAdapterArrayList: ArrayList<MonthAdapter> = ArrayList()
         val calendar: Calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, 1902)
         calendar.set(Calendar.MONTH, 0)
         calendar.set(Calendar.DATE, 1)
         for (i in 0 until 2400) {
-            calendarAdapterArrayList.add(CalendarAdapter(context!!, calendar, schedules))
+            monthAdapterArrayList.add(MonthAdapter(context!!, calendar, schedules))
             calendar.add(Calendar.MONTH, 1)
         }
 
         // ViewPager2 어댑터 및 초기 설정
-        val viewPager2Adapter: ViewPager2Adapter = ViewPager2Adapter(context!!, calendarAdapterArrayList)
-        viewPager2.adapter = viewPager2Adapter
-        viewPager2.orientation = ViewPager2.ORIENTATION_HORIZONTAL
-        viewPager2.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+        val calendarAdapter: CalendarAdapter = CalendarAdapter(context!!, monthAdapterArrayList)
+        vpCalendar.adapter = calendarAdapter
+        vpCalendar.orientation = ViewPager2.ORIENTATION_HORIZONTAL
+        vpCalendar.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
-                tvYYYYMM.text = (viewPager2.adapter as ViewPager2Adapter).calendarAdapterArrayList.get(position).getTitle()
+                tvYYYYMM.text = (vpCalendar.adapter as CalendarAdapter).monthAdapterArrayList.get(position).getTitle()
 
                 super.onPageSelected(position)
             }
