@@ -4,7 +4,6 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-// TODO: 2022-04-06 Update 
 class AutoPlannerDBHelper(
     context: Context?,
     name: String?,

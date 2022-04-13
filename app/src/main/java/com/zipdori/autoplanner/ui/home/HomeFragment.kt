@@ -363,11 +363,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 start.set(Calendar.HOUR, 0)
                 start.set(Calendar.MINUTE, 0)
                 start.set(Calendar.SECOND, 0)
-                if (it.dtEnd != null && it.allDay != 1) {
+                if (it.dtEnd != null) {
                     val end: Calendar = Calendar.getInstance()
                     end.timeInMillis = it.dtEnd!!
 
                     while(start <= end) {
+                        if (simpleDateFormat.format(start.time).equals(simpleDateFormat.format(end.time)) && it.allDay == 1) break
+
                         var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(start.time))
                         if (tempArray == null) {
                             tempArray = ArrayList()
@@ -385,27 +387,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     tempArray.add(it)
                     schedules.put(simpleDateFormat.format(start.time), tempArray)
                 }
-
-                println(" ")
-                println("id : " + it.id)
-                println("calendarId : " + it.calendarId)
-                println("organizer : " + it.organizer)
-                println("title : " + it.title)
-                println("eventLocation : " + it.eventLocation)
-                println("description : " + it.description)
-                println("displayColor : " + it.displayColor)
-                println("eventColor : " + it.eventColor)
-                println("dtStart : " + it.dtStart)
-                println("dtEnd : " + it.dtEnd)
-                println("eventTimeZone : " + it.eventTimeZone)
-                println("duration : " + it.duration)
-                println("allDay : " + it.allDay)
-                println("rRule : " + it.rRule)
-                println("rDate : " + it.rDate)
-                println("availability : " + it.availability)
-                println("guestCanModify : " + it.guestCanModify)
-                println("deleted : " + it.deleted)
-
             }
         }
 
