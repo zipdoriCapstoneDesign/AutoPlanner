@@ -95,7 +95,6 @@ class CalendarProviderModule(context: Context) {
             put(CalendarContract.Calendars.OWNER_ACCOUNT, ownerAccount)
             put(CalendarContract.Calendars.CALENDAR_TIME_ZONE, calendarTimeZone)
         }
-        //val uri: Uri = contentResolver.insert(CalendarContract.Calendars.CONTENT_URI, values)!!
         val uri: Uri = contentResolver.insert(asSyncAdapter(CalendarContract.Calendars.CONTENT_URI, accountName, accountType), values)!!
         val calendarId: Long = uri.lastPathSegment!!.toLong()
 

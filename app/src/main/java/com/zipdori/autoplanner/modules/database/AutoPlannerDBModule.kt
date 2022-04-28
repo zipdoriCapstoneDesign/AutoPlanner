@@ -6,7 +6,6 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import java.sql.Timestamp
 
-// TODO: 2022-04-06 Update 
 class AutoPlannerDBModule(context: Context?) {
     private var autoPlannerDBHelper: AutoPlannerDBHelper
     private var db: SQLiteDatabase
