@@ -1,11 +1,14 @@
 package com.zipdori.autoplanner.ui.home
 
 import android.Manifest
+import android.app.Activity
 
 import android.app.Activity.RESULT_OK
 
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -39,6 +42,7 @@ import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
+import java.time.ZoneOffset.UTC
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
@@ -68,6 +72,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     val schedules: HashMap<String, ArrayList<EventsVO>> = HashMap()
     var imgList = ArrayList<Uri>() //사진 다중 선택할 때 사진 Uri 담는 리스트
+    var singleUri:Uri? = null //카메라 사용시 카메라 키기 전에 만드는 uri 전역변수로 저장, 다른 함수에서 활용
 
     private lateinit var getResultText: ActivityResultLauncher<Intent>
 
@@ -108,7 +113,19 @@ class HomeFragment : Fragment(), View.OnClickListener {
         getResultText = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
-                // TODO: 2022-04-06 더 효율적인 방법 구상하기 
+                // TODO: 2022-04-06 더 효율적인 방법 구상하기
+                val temp:EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
+                Log.e("홈프래그먼트 수신",temp?.dtStart.toString())
+
+                val sharedPreferences: SharedPreferences = requireActivity().getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+                val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
+                val title = temp.title
+                val description = temp.description
+                val dtStart = temp.dtStart
+                val dtEnd = temp.dtEnd!!
+                val eventTimeZone = "UTC"
+                val calendarProviderModule = CalendarProviderModule(requireActivity().applicationContext)
+                calendarProviderModule.insertEvent(calendarId, title, null, description, temp.eventColor, dtStart, dtEnd, eventTimeZone, null, null, null, null)
                 initCalendar()
             }
         }
@@ -188,11 +205,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 // 기본 일정 추가 버튼은 현재시간과 +1시간으로 범위 설정
                 toCal.add(Calendar.HOUR,1)
 
-                intent.putExtra("FromDate", fromCal.timeInMillis)
-                intent.putExtra("ToDate", toCal.timeInMillis)
-               // startActivity(intent)
-
-
+                val temp = EventsVO(0,0,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
+                intent.putExtra("SingleScheduleData", temp)
 
                 getResultText.launch(intent)
             }
@@ -225,18 +239,12 @@ class HomeFragment : Fragment(), View.OnClickListener {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode){
             Consts.FLAG_REQ_CAMERA ->{
-                Toast.makeText(
-                    context,
-                    "아직 넘길 액티비티가 없어요. (카메라)",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-            Consts.GET_GALLERY_IMAGE ->{
-                Toast.makeText(
-                    context,
-                    "아직 넘길 액티비티가 없어요. (갤러리)",
-                    Toast.LENGTH_SHORT
-                ).show()
+                if(resultCode == Activity.RESULT_OK) {
+                    imgList.add(singleUri!!)
+                    val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                    intent.putParcelableArrayListExtra("imgURIs", imgList)
+                    startActivity(intent)
+                }
             }
             Consts.GET_GALLERY_IMAGE_MULTI->{
                 imgList.clear()
@@ -261,9 +269,12 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     }
 
                 }
-                val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                intent.putParcelableArrayListExtra("imgURIs",imgList)
-                startActivity(intent)
+
+                if(imgList.isNotEmpty()) {
+                    val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                    intent.putParcelableArrayListExtra("imgURIs", imgList)
+                    startActivity(intent)
+                }
             }
         }
     }
@@ -290,12 +301,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     }
                 }
                 Log.e("승인절차","카메라 승인 확인")
+                imgList.clear()
                 val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
                 val uri: Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
-                val selectedImageUri = uri
+                singleUri = uri
 
                 val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, selectedImageUri)
+                takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, uri)
                 startActivityForResult(takePictureIntent, Consts.FLAG_REQ_CAMERA)
             }
             Consts.FLAG_PERM_STORAGE -> {
@@ -331,9 +343,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
 
                 startActivityForResult(intent, Consts.GET_GALLERY_IMAGE_MULTI)
-
-
             }
+
         }
     }
 

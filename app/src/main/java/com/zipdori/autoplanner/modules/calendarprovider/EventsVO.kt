@@ -1,5 +1,11 @@
 package com.zipdori.autoplanner.modules.calendarprovider
 
+import android.os.Parcel
+import android.os.Parcelable
+import androidx.versionedparcelable.VersionedParcelize
+import kotlinx.parcelize.Parcelize
+
+@Parcelize
 class EventsVO(
     var id: Long,
     var calendarId: Int,
@@ -19,4 +25,4 @@ class EventsVO(
     var availability: Int?,
     var guestCanModify: Int?,
     var deleted: Int?
-)
+) : Parcelable

@@ -69,7 +69,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
     var planTo: Calendar = Calendar.getInstance()
     var tempCal:Calendar? = null // 연월일 설정시 캘린더에서 날짜를 눌러대면 등록 버튼 누를 때까지 바로 적용되지 않게 임시 캘린더 변수
 
-
+    var tempEvent:EventsVO? = null
 
     ////로그 확인 시 참고 형태 Log.e("btemp", calCheckForm.format(tempCal!!.time))
     val calCheckForm = SimpleDateFormat("yy.MM.dd hh:mm")
@@ -83,11 +83,8 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
         actionBar?.hide()
         setContentView(view)
 
-        // 액티비티가 처음 틀어질 때 기간 설정 버튼에 입력되어있을 시작/종료일.시간 설정
-        planFrom.timeInMillis = intent.getLongExtra("FromDate",0)
-        planTo.timeInMillis = intent.getLongExtra("ToDate",0)
 
-        writeDateTimeToButton()
+        writeScheduleForm()
         //---------------------버튼---------------------
 
         //색상 버튼 눌렀을 때 -----
@@ -105,9 +102,40 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
         // 등록/취소 버튼들
         binding.backButton.setOnClickListener() {
+            val intent = Intent()
+            setResult(RESULT_CANCELED,intent)
             finish()
         }
         binding.regButton.setOnClickListener(this)
+    }
+
+    private fun writeScheduleForm() {
+        // 액티비티가 처음 틀어질 때 기간 설정 버튼에 입력되어있을 시작/종료일.시간 설정
+        val temp:EventsVO? = intent.getParcelableExtra("SingleScheduleData")
+        if (temp != null)
+        {
+            tempEvent = temp
+            binding.tietScheduleTitle.setText(tempEvent!!.title)
+
+            val drawable = ContextCompat.getDrawable(
+                this,
+                R.drawable.ic_colorpickerbutton
+            ) as GradientDrawable?
+
+            if(temp.eventColor != null) {
+                drawable?.setColor(temp.eventColor!!)
+                binding.coloredNormalButton.setImageDrawable(drawable)
+            }
+
+            planFrom.timeInMillis = tempEvent!!.dtStart
+            planTo.timeInMillis = tempEvent!!.dtEnd!!
+
+        }
+        else {
+            planFrom.timeInMillis = intent.getLongExtra("FromDate",0)
+            planTo.timeInMillis = intent.getLongExtra("ToDate",0)
+        }
+        writeDateTimeToButton()
     }
 
     // OnClick 코드들
@@ -180,20 +208,15 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 }
             }
             R.id.regButton -> {
-                val sharedPreferences: SharedPreferences = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+                tempEvent!!.title = binding.tietScheduleTitle.text.toString()
+                tempEvent!!.description = binding.etScheduleDescription.text.toString()
+                tempEvent!!.dtStart = planFrom.timeInMillis
+                tempEvent!!.dtEnd = planTo.timeInMillis
+                //tempEvent!!.imgUri = selectedImageUri
 
-                val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
-                val title = binding.tietScheduleTitle.text.toString()
-                val description = binding.etScheduleDescription
-                val dtStart = planFrom.timeInMillis
-                val dtEnd = planTo.timeInMillis
-                val eventTimeZone = "UTC"
-
-                val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(applicationContext)
-                calendarProviderModule.insertEvent(calendarId, title, null, description.text.toString(), coloredBtnColor, dtStart, dtEnd, eventTimeZone, null, null, null, null)
-
-                val intent = Intent(this, MainActivity::class.java).apply {}
+                val intent = Intent()
                 setResult(RESULT_OK, intent)
+                intent.putExtra("scheduleItem", tempEvent)
                 if (!isFinishing) finish()
             }
         }
@@ -221,15 +244,15 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
         if(fromToFlag == FLAG_FROM) {
             tempCal = planFrom.clone() as Calendar
-            calForSet.setDate(planFrom.timeInMillis)
+            calForSet.date = planFrom.timeInMillis
         }else {
             tempCal = planTo.clone() as Calendar
-            calForSet.setDate(planTo.timeInMillis)
+            calForSet.date = planTo.timeInMillis
         }
         // 캘린더에서 날짜 클릭할 때마다 호출되는 함수
         calForSet.setOnDateChangeListener { calendarView, year, month, day ->
             tempCal!!.set(year, month, day)
-            Toast.makeText(this, month.toString() + "." + day.toString(), Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "$month.$day", Toast.LENGTH_SHORT).show()
         }
 
         // 연월일 설정하는 버튼으로 연 캘린더 다이얼로그의 등록/취소 버튼

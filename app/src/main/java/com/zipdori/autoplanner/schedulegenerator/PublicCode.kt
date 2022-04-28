@@ -14,12 +14,13 @@ class DateForm(){
         val calYearForm: DateFormat = SimpleDateFormat("yyyy년")
         val calMdForm = SimpleDateFormat("MM월 dd일")
         val calhmForm = SimpleDateFormat("a h시 mm분", Locale.KOREA)
-        val integratedForm = SimpleDateFormat("yyyy. MM. dd")
+        val integratedForm = SimpleDateFormat("yyyy. MM. dd hh:mm")
     }
 }
 
-class EventExtraInfo(
-    var _id:Long,
-    var event_id:Int,
-    var photo:Uri
-)
+//class EventExtraInfo(
+//    var _id:Long,
+//    var event_id:Int,
+//    var photo:Uri
+//)
+//
