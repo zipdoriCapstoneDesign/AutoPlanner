@@ -4,11 +4,8 @@ import android.Manifest
 import android.app.Activity
 
 import android.app.Activity.RESULT_OK
+import android.content.*
 
-import android.content.ContentValues
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -208,6 +205,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 val temp = EventsVO(0,0,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
                 intent.putExtra("SingleScheduleData", temp)
 
+                val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+                val uri: Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
+                Log.e("Uri",uri.toString())
                 getResultText.launch(intent)
             }
         }
@@ -242,9 +242,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 if(resultCode == Activity.RESULT_OK) {
                     imgList.add(singleUri!!)
                     val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                    intent.putParcelableArrayListExtra("imgURIs", imgList)
                     startActivity(intent)
                 }
+                else
+                    requireActivity().contentResolver.delete(singleUri!!,null,null)
             }
             Consts.GET_GALLERY_IMAGE_MULTI->{
                 imgList.clear()
@@ -304,6 +305,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 imgList.clear()
                 val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
                 val uri: Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
+
                 singleUri = uri
 
                 val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
@@ -352,6 +354,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
         var values = ContentValues()
         values.put(MediaStore.Images.Media.DISPLAY_NAME, filename)
         values.put(MediaStore.Images.Media.MIME_TYPE, mimeType)
+        values.put(MediaStore.Images.Media.RELATIVE_PATH, "DCIM/AutoPlanner")
         return requireActivity().contentResolver.insert(
             MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
             values

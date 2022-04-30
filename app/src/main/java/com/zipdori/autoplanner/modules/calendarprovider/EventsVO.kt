@@ -1,5 +1,6 @@
 package com.zipdori.autoplanner.modules.calendarprovider
 
+import android.net.Uri
 import android.os.Parcel
 import android.os.Parcelable
 import androidx.versionedparcelable.VersionedParcelize

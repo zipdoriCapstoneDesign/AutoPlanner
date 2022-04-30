@@ -477,6 +477,12 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
                 }
             }
+        } else {
+            when (requestCode) {
+                Consts.FLAG_REQ_CAMERA -> {
+                    contentResolver.delete(selectedImageUri!!,null,null)
+                }
+            }
         }
     }
 

@@ -190,7 +190,7 @@ class CalendarProviderModule(context: Context) {
         allDay: Int?,
         rRule: String?,
         rDate: String?,
-    ) {
+    ): Long {
         val values = ContentValues().apply {
             put(CalendarContract.Events.CALENDAR_ID, calendarId)
             put(CalendarContract.Events.TITLE, title)
@@ -207,7 +207,8 @@ class CalendarProviderModule(context: Context) {
             put(CalendarContract.Events.RDATE, rDate)
         }
         val uri: Uri = contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)!!
-        val eventId: Long = uri.lastPathSegment!!.toLong()
+
+        return uri.lastPathSegment!!.toLong()
     }
 
     fun asSyncAdapter(uri: Uri, account: String, accountType: String): Uri {
