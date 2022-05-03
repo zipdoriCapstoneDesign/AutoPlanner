@@ -26,13 +26,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
-import com.google.android.material.snackbar.Snackbar
 import com.zipdori.autoplanner.Consts
-import com.zipdori.autoplanner.MainActivity
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
-import com.zipdori.autoplanner.modules.App
-import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calMdForm
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calhmForm
@@ -107,6 +103,10 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
             finish()
         }
         binding.regButton.setOnClickListener(this)
+        
+        if (!tempEvent!!.id.equals((-1).toLong())) {
+            binding.regButton.text = "수정"
+        }
     }
 
     private fun writeScheduleForm() {
@@ -125,6 +125,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
             if(temp.eventColor != null) {
                 drawable?.setColor(temp.eventColor!!)
                 binding.coloredNormalButton.setImageDrawable(drawable)
+                coloredBtnColor = temp.eventColor!!
             }
 
             planFrom.timeInMillis = tempEvent!!.dtStart
@@ -208,11 +209,19 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 }
             }
             R.id.regButton -> {
+                val sharedPreferences: SharedPreferences = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+                tempEvent!!.calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
                 tempEvent!!.title = binding.tietScheduleTitle.text.toString()
+                // tempEvent!!.eventLocation
                 tempEvent!!.description = binding.etScheduleDescription.text.toString()
+                tempEvent!!.eventColor = coloredBtnColor
                 tempEvent!!.dtStart = planFrom.timeInMillis
                 tempEvent!!.dtEnd = planTo.timeInMillis
-                //tempEvent!!.imgUri = selectedImageUri
+                // tempEvent!!.eventTimeZone
+                // tempEvent!!.duration
+                // tempEvent!!.allDay
+                // tempEvent!!.rRule
+                // tempEvent!!.rDate
 
                 val intent = Intent()
                 setResult(RESULT_OK, intent)
@@ -441,11 +450,14 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                     ) // will be fired only when OK button was tapped
                     coloredBtnColor = color
 
+                    /*
                     //색상 받는 곳은 여기
                     pickedColor = Integer.toHexString(color)
 
                     Snackbar.make(view, pickedColor, Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show()
+
+                     */
 
                     //컬러피커 버튼 색 변경
                     drawable?.setColor(color);

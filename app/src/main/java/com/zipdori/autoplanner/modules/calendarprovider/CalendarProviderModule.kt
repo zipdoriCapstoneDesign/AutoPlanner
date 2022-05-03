@@ -1,11 +1,13 @@
 package com.zipdori.autoplanner.modules.calendarprovider
 
 import android.content.ContentResolver
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.CalendarContract
+import android.util.Log
 
 class CalendarProviderModule(context: Context) {
     private val contentResolver: ContentResolver = context.contentResolver
@@ -150,7 +152,7 @@ class CalendarProviderModule(context: Context) {
         while (cur.moveToNext()) {
             val eventsVO: EventsVO = EventsVO(
                 cur.getLong(PROJECTION_ID_INDEX),
-                cur.getInt(PROJECTION_CALENDAR_ID_INDEX),
+                cur.getLong(PROJECTION_CALENDAR_ID_INDEX),
                 cur.getString(PROJECTION_ORGANIZER_INDEX),
                 cur.getString(PROJECTION_TITLE_INDEX),
                 cur.getString(PROJECTION_EVENT_LOCATION_INDEX),
@@ -209,6 +211,53 @@ class CalendarProviderModule(context: Context) {
         val uri: Uri = contentResolver.insert(CalendarContract.Events.CONTENT_URI, values)!!
 
         return uri.lastPathSegment!!.toLong()
+    }
+
+    fun setEventDeleted(id: Long) {
+        val DEBUG_TAG = "CalendarProviderModule"
+
+        val values = ContentValues().apply {
+            put(CalendarContract.Events.DELETED, true)
+        }
+        val updateUri: Uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)
+        val rows: Int = contentResolver.update(updateUri, values, null, null)
+
+        Log.i(DEBUG_TAG, "Rows set deleted: $rows")
+    }
+
+    fun updateEvent(
+        id: Long,
+        title: String?,
+        eventLocation: String?,
+        description: String?,
+        eventColor: Int?,
+        dtStart: Long,
+        dtEnd: Long,
+        eventTimeZone: String,
+        duration: String?,
+        allDay: Int?,
+        rRule: String?,
+        rDate: String?
+    ) {
+        val DEBUG_TAG = "CalendarProviderModule"
+
+        val values = ContentValues().apply {
+            put(CalendarContract.Events.TITLE, title)
+            put(CalendarContract.Events.EVENT_LOCATION, eventLocation)
+            put(CalendarContract.Events.DESCRIPTION, description)
+            put(CalendarContract.Events.EVENT_COLOR, eventColor)
+            put(CalendarContract.Events.DTSTART, dtStart)
+            put(CalendarContract.Events.DTEND, dtEnd)
+            put(CalendarContract.Events.EVENT_TIMEZONE, eventTimeZone)
+            put(CalendarContract.Events.DURATION, duration)
+            put(CalendarContract.Events.ALL_DAY, allDay)
+            put(CalendarContract.Events.RRULE, rRule)
+            put(CalendarContract.Events.RDATE, rDate)
+        }
+        val updateUri: Uri = ContentUris.withAppendedId(CalendarContract.Events.CONTENT_URI, id)
+        val rows: Int = contentResolver.update(updateUri, values, null, null)
+
+        Log.i(DEBUG_TAG, "Rows updated: $rows")
     }
 
     fun asSyncAdapter(uri: Uri, account: String, accountType: String): Uri {

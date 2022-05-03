@@ -2,10 +2,11 @@ package com.zipdori.autoplanner.ui.home
 
 import android.Manifest
 import android.app.Activity
-
 import android.app.Activity.RESULT_OK
-import android.content.*
-
+import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
@@ -32,17 +33,15 @@ import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE_MULTIPICK
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentHomeBinding
 import com.zipdori.autoplanner.modules.App
+import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
-
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
-import java.time.ZoneOffset.UTC
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 class HomeFragment : Fragment(), View.OnClickListener {
 
@@ -67,11 +66,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     private lateinit var autoPlannerDBModule: AutoPlannerDBModule
 
-    val schedules: HashMap<String, ArrayList<EventsVO>> = HashMap()
     var imgList = ArrayList<Uri>() //사진 다중 선택할 때 사진 Uri 담는 리스트
     var singleUri:Uri? = null //카메라 사용시 카메라 키기 전에 만드는 uri 전역변수로 저장, 다른 함수에서 활용
 
-    private lateinit var getResultText: ActivityResultLauncher<Intent>
+    private lateinit var commonModule: CommonModule
+
+    private lateinit var getResultSetSchedule: ActivityResultLauncher<Intent>
+    val monthAdapterArrayList: ArrayList<MonthAdapter> = ArrayList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -97,7 +98,58 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabOpen = AnimationUtils.loadAnimation(context, R.anim.fab_open)
         fabClose = AnimationUtils.loadAnimation(context, R.anim.fab_close)
 
-        initCalendar()
+        commonModule = CommonModule(context!!)
+
+        getResultSetSchedule = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                val tempEvent:EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
+
+                val sharedPreferences: SharedPreferences = requireActivity().getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+                val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
+                val id = tempEvent.id
+                val title = tempEvent.title
+                val eventLocation = tempEvent.eventLocation
+                val description = tempEvent.description
+                val eventColor = tempEvent.eventColor
+                val dtStart = tempEvent.dtStart
+                val dtEnd = tempEvent.dtEnd!!
+                val duration = tempEvent.duration
+                val allDay = tempEvent.allDay
+                val rRule = tempEvent.rRule
+                val rDate = tempEvent.rDate
+                val eventTimeZone = "UTC"
+
+                // id가 -1이면 새로운 Event를 추가하는 것으로 간주
+                val calendarProviderModule = CalendarProviderModule(requireActivity().applicationContext)
+                if (id.equals((-1).toLong())) {
+                    calendarProviderModule.insertEvent(calendarId, title, eventLocation, description, eventColor, dtStart, dtEnd, eventTimeZone, duration, allDay, rRule, rDate)
+                } else {
+                    calendarProviderModule.updateEvent(id, title, eventLocation, description, eventColor, dtStart, dtEnd, eventTimeZone, duration, allDay, rRule, rDate)
+
+                    for (monthAdapter in monthAdapterArrayList) {
+                        if (monthAdapter.scheduleListAdapter != null) {
+                            val date: Date = monthAdapter.scheduleListAdapter!!.getDate()
+                            var tempEventsVOArrayList : ArrayList<EventsVO>? = commonModule.getEventsVOArrayList(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(date))
+                            if (tempEventsVOArrayList == null) {
+                                tempEventsVOArrayList = ArrayList()
+                            }
+                            monthAdapter.scheduleListAdapter!!.setEventsVOArrayList(tempEventsVOArrayList)
+                            monthAdapter.scheduleListAdapter!!.notifyDataSetChanged()
+                        }
+                    }
+                }
+
+                // TODO: 2022-04-06 더 효율적인 방법 구상해보기
+                val calendar: Calendar = Calendar.getInstance()
+                calendar.timeInMillis = tempEvent.dtStart
+                drawCalendar()
+                setViewPager2Position(calendar, false)
+            }
+        }
+
+        drawCalendar()
+        setViewPager2CurMonth(false)
 
         fabAI.setOnClickListener(this)
         fabPhoto.setOnClickListener(this)
@@ -106,26 +158,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
         fabAdd.setOnClickListener(this)
 
         autoPlannerDBModule = AutoPlannerDBModule(context)
-
-        getResultText = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                // TODO: 2022-04-06 더 효율적인 방법 구상하기
-                val temp:EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
-                Log.e("홈프래그먼트 수신",temp?.dtStart.toString())
-
-                val sharedPreferences: SharedPreferences = requireActivity().getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
-                val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
-                val title = temp.title
-                val description = temp.description
-                val dtStart = temp.dtStart
-                val dtEnd = temp.dtEnd!!
-                val eventTimeZone = "UTC"
-                val calendarProviderModule = CalendarProviderModule(requireActivity().applicationContext)
-                calendarProviderModule.insertEvent(calendarId, title, null, description, temp.eventColor, dtStart, dtEnd, eventTimeZone, null, null, null, null)
-                initCalendar()
-            }
-        }
 
         return root
     }
@@ -155,6 +187,11 @@ class HomeFragment : Fragment(), View.OnClickListener {
     
     private fun setViewPager2CurMonth(smoothScroll: Boolean) {
         val calendar: Calendar = Calendar.getInstance()
+        val monthDiff = (calendar.get(Calendar.YEAR) - 1902) * 12 + calendar.get(Calendar.MONTH)
+        vpCalendar.setCurrentItem(monthDiff, smoothScroll)
+    }
+
+    private fun setViewPager2Position(calendar: Calendar, smoothScroll: Boolean) {
         val monthDiff = (calendar.get(Calendar.YEAR) - 1902) * 12 + calendar.get(Calendar.MONTH)
         vpCalendar.setCurrentItem(monthDiff, smoothScroll)
     }
@@ -202,13 +239,16 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 // 기본 일정 추가 버튼은 현재시간과 +1시간으로 범위 설정
                 toCal.add(Calendar.HOUR,1)
 
-                val temp = EventsVO(0,0,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
-                intent.putExtra("SingleScheduleData", temp)
+                val sharedPreferences: SharedPreferences = requireActivity().getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+                val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
+                val tempEvent = EventsVO(-1, calendarId,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
+                intent.putExtra("SingleScheduleData", tempEvent)
 
                 val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
                 val uri: Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
                 Log.e("Uri",uri.toString())
-                getResultText.launch(intent)
+
+                getResultSetSchedule.launch(intent)
             }
         }
     }
@@ -361,57 +401,22 @@ class HomeFragment : Fragment(), View.OnClickListener {
         )
     }
 
-    private fun initCalendar() {
-        // 기존 일정 불러오기
-        schedules.clear()
-
-        val calendarProviderModule: CalendarProviderModule = CalendarProviderModule(context!!)
-        val allEvents: ArrayList<EventsVO> = calendarProviderModule.selectAllEvents()
-
-        allEvents.forEach {
-            if (it.deleted != 1) {
-                val simpleDateFormat: SimpleDateFormat = SimpleDateFormat("yyyy.MM.dd", Locale.US)
-
-                val start: Calendar = Calendar.getInstance()
-                start.timeInMillis = it.dtStart
-                start.set(Calendar.HOUR, 0)
-                start.set(Calendar.MINUTE, 0)
-                start.set(Calendar.SECOND, 0)
-                if (it.dtEnd != null) {
-                    val end: Calendar = Calendar.getInstance()
-                    end.timeInMillis = it.dtEnd!!
-
-                    while(start <= end) {
-                        if (simpleDateFormat.format(start.time).equals(simpleDateFormat.format(end.time)) && it.allDay == 1) break
-
-                        var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(start.time))
-                        if (tempArray == null) {
-                            tempArray = ArrayList()
-                        }
-                        tempArray.add(it)
-                        schedules.put(simpleDateFormat.format(start.time), tempArray)
-
-                        start.set(Calendar.DATE, start.get(Calendar.DATE) + 1)
-                    }
-                } else {
-                    var tempArray: ArrayList<EventsVO>? = schedules.get(simpleDateFormat.format(start.time))
-                    if (tempArray == null) {
-                        tempArray = ArrayList()
-                    }
-                    tempArray.add(it)
-                    schedules.put(simpleDateFormat.format(start.time), tempArray)
-                }
-            }
-        }
-
+    private fun drawCalendar() {
         // GridView 를 위한 CalendarAdapter
-        val monthAdapterArrayList: ArrayList<MonthAdapter> = ArrayList()
+        monthAdapterArrayList.clear()
         val calendar: Calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, 1902)
         calendar.set(Calendar.MONTH, 0)
         calendar.set(Calendar.DATE, 1)
         for (i in 0 until 2400) {
-            monthAdapterArrayList.add(MonthAdapter(context!!, calendar, schedules))
+            val monthAdapter: MonthAdapter = MonthAdapter(context!!, calendar, getResultSetSchedule)
+            monthAdapter.setOnEventsChangeListener(object : ScheduleListAdapter.OnEventsChangeListener {
+                override fun onEventsChange(calendar: Calendar) {
+                    drawCalendar()
+                    setViewPager2Position(calendar, false)
+                }
+            })
+            monthAdapterArrayList.add(monthAdapter)
             calendar.add(Calendar.MONTH, 1)
         }
 
@@ -426,7 +431,5 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 super.onPageSelected(position)
             }
         })
-
-        setViewPager2CurMonth(false)
     }
 }

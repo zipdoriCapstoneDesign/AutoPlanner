@@ -2,6 +2,7 @@ package com.toyproject.testproject3_zipdori.ui.home
 
 import android.app.AlertDialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
@@ -11,11 +12,13 @@ import android.view.Window
 import android.widget.AbsListView
 import android.widget.BaseAdapter
 import android.widget.TextView
+import androidx.activity.result.ActivityResultLauncher
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.zipdori.autoplanner.R
+import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.ui.home.ScheduleBeltAdapter
 import com.zipdori.autoplanner.ui.home.ScheduleListAdapter
@@ -23,19 +26,26 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class MonthAdapter(context: Context, calendar: Calendar, val schedules: HashMap<String, ArrayList<EventsVO>>) : BaseAdapter() {
-    private val context: Context
+class MonthAdapter(
+    val context: Context,
+    calendar: Calendar,
+    val getResultSetSchedule: ActivityResultLauncher<Intent>
+    ) : BaseAdapter() {
     private val layoutInflater: LayoutInflater
     private val calendar: Calendar = Calendar.getInstance()
     private val dateManager: DateManager
     private var dateArray: ArrayList<Date>
+    private var onEventsChangeListener: ScheduleListAdapter.OnEventsChangeListener?
+    private val commonModule: CommonModule = CommonModule(context)
+    var scheduleListAdapter: ScheduleListAdapter?
 
     init {
-        this.context = context
-        layoutInflater = LayoutInflater.from(this.context)
+        layoutInflater = LayoutInflater.from(context)
         this.calendar.time = calendar.time
-        dateManager = DateManager(this.calendar)
+        dateManager = DateManager(calendar)
         dateArray = dateManager.getDays()
+        this.onEventsChangeListener = null
+        this.scheduleListAdapter = null
     }
 
     private class ViewHolder {
@@ -61,11 +71,6 @@ class MonthAdapter(context: Context, calendar: Calendar, val schedules: HashMap<
             convertView.tag = viewHolder
         } else {
             viewHolder = convertView.tag as ViewHolder
-        }
-
-        val eventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
-        if (eventsVOArrayList != null) {
-            eventsVOArrayList.sortBy { it.dtStart }
         }
 
         val dp: Float = context.resources.displayMetrics.density
@@ -118,6 +123,7 @@ class MonthAdapter(context: Context, calendar: Calendar, val schedules: HashMap<
             viewHolder.tvDate.setBackgroundColor(Color.BLACK)
         }
 
+        val eventsVOArrayList: ArrayList<EventsVO>? = commonModule.getEventsVOArrayList(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
         viewHolder.rvScheduleBelt.layoutManager = LinearLayoutManager(context)
         if (eventsVOArrayList != null) {
             val scheduleBeltAdapter: ScheduleBeltAdapter = ScheduleBeltAdapter(context, eventsVOArrayList)
@@ -146,7 +152,8 @@ class MonthAdapter(context: Context, calendar: Calendar, val schedules: HashMap<
             tvDayDss.setTextColor(colorId)
 
             if (eventsVOArrayList != null) {
-                var scheduleListAdapter: ScheduleListAdapter = ScheduleListAdapter(context, eventsVOArrayList)
+                scheduleListAdapter = ScheduleListAdapter(context, eventsVOArrayList, date, getResultSetSchedule)
+                scheduleListAdapter!!.setOnEventsChangeListener(onEventsChangeListener!!)
                 rvDss.layoutManager = LinearLayoutManager(context)
                 rvDss.adapter = scheduleListAdapter
             }
@@ -188,6 +195,10 @@ class MonthAdapter(context: Context, calendar: Calendar, val schedules: HashMap<
         dateManager.prevMonth()
         dateArray = dateManager.getDays()
         this.notifyDataSetChanged()
+    }
+
+    fun setOnEventsChangeListener(onEventsChangeListener: ScheduleListAdapter.OnEventsChangeListener) {
+        this.onEventsChangeListener = onEventsChangeListener
     }
 }
 
