@@ -16,5 +16,7 @@ class Consts {
         // Calendar permission flag
         const val FLAG_PERM_CALENDAR = 300
 
+        const val RESULT_SCHEDULELIST_REG = 400
+
     }
 }

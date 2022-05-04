@@ -11,10 +11,13 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.zipdori.autoplanner.Consts
 
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivityListupSchedulecellBinding
+import com.zipdori.autoplanner.modules.calendarprovider.EventExtraInfo
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
+import com.zipdori.autoplanner.ui.home.HomeFragment
 import java.util.*
 
 class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
@@ -22,6 +25,8 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
     private lateinit var binding: ActivityListupSchedulecellBinding
     lateinit var scheduleCellAdaptor:ScheduleCellAdapter
     val scheduleList = mutableListOf<EventsVO>()
+    var scheduleListExtra = mutableListOf<EventExtraInfo>()
+
     var imgList = ArrayList<Uri>()
     private lateinit var saveIntent: ActivityResultLauncher<Intent>
 
@@ -43,6 +48,7 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
 
         initRecycler()
 
+        binding.scRegButton.setOnClickListener(this)
         binding.scCancelButton.setOnClickListener(this)
     }
 
@@ -78,20 +84,48 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
             add(EventsVO(2,1,null,"외출",null,null,-10572033,Color.parseColor("#F8FF41"),System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
             add(EventsVO(3,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
             add(EventsVO(4,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(5,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(6,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(7,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(8,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(9,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+          }
+
+        // TODO : 사진 여러장을 선택해도 우선은 처음 선택된 이미지로 통일. 위의 할 일과 마찬가지로 인공지능이 적용되면 맞춤형으로 코드가 바뀌어야 할 부분
+        scheduleListExtra.apply{
+            add(EventExtraInfo(0,0,imgList[0]))
+            add(EventExtraInfo(0,0,imgList[0]))
+            add(EventExtraInfo(0,0,imgList[0]))
+            add(EventExtraInfo(0,0,imgList[0]))
+            add(EventExtraInfo(0,0,imgList[0]))
         }
 
         val scheduleListBool = BooleanArray(scheduleList.size) { true }
         scheduleCellAdaptor.scheduleList = scheduleList
+        scheduleCellAdaptor.scheduleListExtra = scheduleListExtra
         scheduleCellAdaptor.scheduleListBool = scheduleListBool
     }
 
     override fun onClick(p0: View?) {
         when (p0?.id) {
+            R.id.sc_regButton -> {
+
+                //어댑터 안에서 변경되던 리스트 다시 액티비티 관점으로 꺼내서 작업
+                val checkedScheduleList = scheduleCellAdaptor.scheduleList
+                val checkedScheduleListExtra = scheduleCellAdaptor.scheduleListExtra
+                val checkScheduleListBool = scheduleCellAdaptor.scheduleListBool
+
+                //체크되지 않은 리스트 제거
+                val len = checkedScheduleList.size
+
+                for (i in len-1 downTo 0){
+                    if(!checkScheduleListBool[i]) {
+                        checkedScheduleList.removeAt(i)
+                        checkedScheduleListExtra.removeAt(i)
+                    }
+                }
+
+                val intent = Intent()
+                setResult(Consts.RESULT_SCHEDULELIST_REG, intent)
+                intent.putParcelableArrayListExtra("checkedList", ArrayList(checkedScheduleList))
+                intent.putParcelableArrayListExtra("checkedListExtra", ArrayList(checkedScheduleListExtra))
+                finish()
+            }
             R.id.sc_cancelButton-> {
                 finish()
             }

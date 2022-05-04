@@ -1,5 +1,12 @@
 package com.zipdori.autoplanner.schedulegenerator
 
+
+import android.app.Application
+import android.content.Context
+import android.net.Uri
+
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -12,3 +19,7 @@ class DateForm(){
         val integratedForm = SimpleDateFormat("yyyy. MM. dd hh:mm")
     }
 }
+
+
+
+

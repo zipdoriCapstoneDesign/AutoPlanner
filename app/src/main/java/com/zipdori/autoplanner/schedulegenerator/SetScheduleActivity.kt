@@ -29,6 +29,7 @@ import androidx.fragment.app.FragmentActivity
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
+import com.zipdori.autoplanner.modules.calendarprovider.EventExtraInfo
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calMdForm
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calhmForm
@@ -66,6 +67,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
     var tempCal:Calendar? = null // 연월일 설정시 캘린더에서 날짜를 눌러대면 등록 버튼 누를 때까지 바로 적용되지 않게 임시 캘린더 변수
 
     var tempEvent:EventsVO? = null
+    var tempEventExtra:EventExtraInfo? = null
 
     ////로그 확인 시 참고 형태 Log.e("btemp", calCheckForm.format(tempCal!!.time))
     val calCheckForm = SimpleDateFormat("yy.MM.dd hh:mm")
@@ -112,6 +114,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
     private fun writeScheduleForm() {
         // 액티비티가 처음 틀어질 때 기간 설정 버튼에 입력되어있을 시작/종료일.시간 설정
         val temp:EventsVO? = intent.getParcelableExtra("SingleScheduleData")
+        val tempExtra: EventExtraInfo? = intent.getParcelableExtra("SingleScheduleDataExtra")
         if (temp != null)
         {
             tempEvent = temp
@@ -131,6 +134,11 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
             planFrom.timeInMillis = tempEvent!!.dtStart
             planTo.timeInMillis = tempEvent!!.dtEnd!!
 
+            if(tempExtra?.photo != null) {
+                tempEventExtra = tempExtra
+                selectedImageUri = tempExtra.photo
+                binding.uploadedImage.setImageURI(selectedImageUri)
+            }
         }
         else {
             planFrom.timeInMillis = intent.getLongExtra("FromDate",0)
@@ -223,9 +231,14 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 // tempEvent!!.rRule
                 // tempEvent!!.rDate
 
+
                 val intent = Intent()
                 setResult(RESULT_OK, intent)
                 intent.putExtra("scheduleItem", tempEvent)
+                if(tempEventExtra!=null) {
+                    tempEventExtra!!.photo = selectedImageUri
+                    intent.putExtra("scheduleItemExtra",tempEventExtra)
+                }
                 if (!isFinishing) finish()
             }
         }

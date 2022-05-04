@@ -24,10 +24,12 @@ import android.widget.LinearLayout
 
 
 import androidx.appcompat.content.res.AppCompatResources
+import com.zipdori.autoplanner.modules.calendarprovider.EventExtraInfo
 
 class ScheduleCellAdapter(val context: Context, val saveIntent: ActivityResultLauncher<Intent>) :
     RecyclerView.Adapter<ScheduleCellAdapter.ViewHolder>() {
         var scheduleList= mutableListOf<EventsVO>()
+        var scheduleListExtra = mutableListOf<EventExtraInfo>()
         var scheduleListBool:BooleanArray = BooleanArray(0)
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -71,6 +73,7 @@ class ScheduleCellAdapter(val context: Context, val saveIntent: ActivityResultLa
             modifyArea.setOnClickListener{
                 val intent = Intent(context, SetScheduleActivity::class.java)
                 intent.putExtra("SingleScheduleData", item)
+                intent.putExtra("SingleScheduleDataExtra", scheduleListExtra[position])
                 saveIntent.launch(intent)
             }
             eventRegCheck.setOnClickListener{
