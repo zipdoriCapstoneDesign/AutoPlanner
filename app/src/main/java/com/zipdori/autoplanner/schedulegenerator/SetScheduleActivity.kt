@@ -29,9 +29,10 @@ import androidx.fragment.app.FragmentActivity
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
-import com.zipdori.autoplanner.modules.calendarprovider.EventExtraInfo
+import EventExtraInfo
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calMdForm
+import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calYearForm
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calhmForm
 import petrov.kristiyan.colorpicker.ColorPicker
 import petrov.kristiyan.colorpicker.ColorPicker.OnChooseColorListener
@@ -67,7 +68,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
     var tempCal:Calendar? = null // 연월일 설정시 캘린더에서 날짜를 눌러대면 등록 버튼 누를 때까지 바로 적용되지 않게 임시 캘린더 변수
 
     var tempEvent:EventsVO? = null
-    var tempEventExtra:EventExtraInfo? = null
+    var tempEventExtra: EventExtraInfo? = null
 
     ////로그 확인 시 참고 형태 Log.e("btemp", calCheckForm.format(tempCal!!.time))
     val calCheckForm = SimpleDateFormat("yy.MM.dd hh:mm")
@@ -134,9 +135,9 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
             planFrom.timeInMillis = tempEvent!!.dtStart
             planTo.timeInMillis = tempEvent!!.dtEnd!!
 
-            if(tempExtra?.photo != null) {
-                tempEventExtra = tempExtra
-                selectedImageUri = tempExtra.photo
+            tempEventExtra = tempExtra
+            selectedImageUri = tempEventExtra?.photo
+            if(selectedImageUri != null) {
                 binding.uploadedImage.setImageURI(selectedImageUri)
             }
         }
@@ -420,10 +421,15 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun writeDateTimeToButton() {
         //기간 설정 4개 버튼 텍스트 리프레시
-        binding.fromDateBtn.text = calMdForm.format(planFrom.time)
+        if(planTo.get(Calendar.YEAR) != planFrom.get(Calendar.YEAR)) {
+            binding.fromDateBtn.text = calYearForm.format(planFrom.time) + calMdForm.format(planFrom.time)
+            binding.toDateBtn.text = calYearForm.format(planTo.time) + calMdForm.format(planTo.time)
+        }
+        else {
+            binding.fromDateBtn.text = calMdForm.format(planFrom.time)
+            binding.toDateBtn.text = calMdForm.format(planTo.time)
+        }
         binding.fromTimeBtn.text = calhmForm.format(planFrom.time)
-
-        binding.toDateBtn.text = calMdForm.format(planTo.time)
         binding.toTimeBtn.text = calhmForm.format(planTo.time)
     }
 

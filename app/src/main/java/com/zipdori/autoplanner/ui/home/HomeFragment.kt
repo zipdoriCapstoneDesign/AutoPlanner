@@ -35,7 +35,8 @@ import com.zipdori.autoplanner.databinding.FragmentHomeBinding
 import com.zipdori.autoplanner.modules.App
 import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
-import com.zipdori.autoplanner.modules.calendarprovider.EventExtraInfo
+import EventExtraInfo
+import androidx.core.content.ContextCompat
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
@@ -98,6 +99,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         fabOpen = AnimationUtils.loadAnimation(context, R.anim.fab_open)
         fabClose = AnimationUtils.loadAnimation(context, R.anim.fab_close)
+
 
         commonModule = CommonModule(context!!)
 
@@ -241,12 +243,16 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             rDate
                         )
                         tempEventExtra.event_id = eventId
+
+                        Log.e("들어온 인덱스",id.toString())
+                        Log.e("들어온 사진uri",tempEventExtra.photo.toString())
                         autoPlannerDBModule.insertExtraInfo(tempEventExtra.event_id,tempEventExtra.photo.toString())
                     }
 
                     // 확인용 : DB 확인하고 초기화
                     autoPlannerDBModule.selectAllExtraInfo()
                     autoPlannerDBModule.initExtraInfo()
+
                 }
         }
 
@@ -357,7 +363,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     private fun toggleFab() {
         if (isFabOpen) {
-            fabAI.setImageResource(R.drawable.ic_baseline_add_24_black)
+            //fabAI.setImageResource(R.drawable.ic_baseline_add_24_black)
             fabPhoto.startAnimation(fabClose)
             fabGallery.startAnimation(fabClose)
             fabText.startAnimation(fabClose)
@@ -366,7 +372,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
             fabText.setClickable(false)
             isFabOpen = false
         } else {
-            fabAI.setImageResource(R.drawable.ic_baseline_close_24_black)
+            //fabAI.setImageResource(R.drawable.ic_baseline_close_24_black)
             fabPhoto.startAnimation(fabOpen)
             fabGallery.startAnimation(fabOpen)
             fabText.startAnimation(fabOpen)

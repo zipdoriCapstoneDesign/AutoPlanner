@@ -1,6 +1,5 @@
 package com.zipdori.autoplanner.schedulegenerator
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
@@ -17,14 +16,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import java.util.*
-import androidx.core.graphics.drawable.DrawableCompat
 
-import android.graphics.drawable.Drawable
 import android.widget.LinearLayout
 
 
-import androidx.appcompat.content.res.AppCompatResources
-import com.zipdori.autoplanner.modules.calendarprovider.EventExtraInfo
+import EventExtraInfo
 
 class ScheduleCellAdapter(val context: Context, val saveIntent: ActivityResultLauncher<Intent>) :
     RecyclerView.Adapter<ScheduleCellAdapter.ViewHolder>() {
@@ -66,23 +62,25 @@ class ScheduleCellAdapter(val context: Context, val saveIntent: ActivityResultLa
                 drawable?.setColor(item.eventColor!!)
                 eventColor.setImageDrawable(drawable)
             }
-
-            eventRegCheck.imageTintList = ColorStateList.valueOf(Color.GREEN)
+            if(scheduleListBool[adapterPosition])
+                eventRegCheck.imageTintList = ColorStateList.valueOf(Color.GREEN)
+            else
+                eventRegCheck.imageTintList = ColorStateList.valueOf(Color.GRAY)
 
             // 등록할 일정 리사이클러뷰 클릭 이벤트
             modifyArea.setOnClickListener{
                 val intent = Intent(context, SetScheduleActivity::class.java)
                 intent.putExtra("SingleScheduleData", item)
-                intent.putExtra("SingleScheduleDataExtra", scheduleListExtra[position])
+                intent.putExtra("SingleScheduleDataExtra", scheduleListExtra[adapterPosition])
                 saveIntent.launch(intent)
             }
             eventRegCheck.setOnClickListener{
-                if(scheduleListBool[position]) {
-                    scheduleListBool[position] = false
+                if(scheduleListBool[adapterPosition]) {
+                    scheduleListBool[adapterPosition] = false
                     eventRegCheck.imageTintList = ColorStateList.valueOf(Color.GRAY)
                 }
                 else {
-                    scheduleListBool[position] = true
+                    scheduleListBool[adapterPosition] = true
                     eventRegCheck.imageTintList = ColorStateList.valueOf(Color.GREEN)
                 }
             }

@@ -170,9 +170,10 @@
             android:layout_alignParentBottom="true"
             android:layout_marginRight="20dp"
             android:layout_marginBottom="20dp"
-            android:backgroundTint="#FFFFFFFF"
-            android:src="@drawable/ic_baseline_add_24_black"
+            app:backgroundTint="#FFF6A4"
             app:borderWidth="0dp"
-            app:fabSize="normal" />
+            app:fabSize="normal"
+            app:maxImageSize="45dp"
+            app:srcCompat="@drawable/icon_ai_txt500" />
     </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

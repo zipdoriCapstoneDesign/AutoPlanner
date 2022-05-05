@@ -1,13 +1,11 @@
 package com.zipdori.autoplanner.schedulegenerator
 
-import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -15,9 +13,8 @@ import com.zipdori.autoplanner.Consts
 
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivityListupSchedulecellBinding
-import com.zipdori.autoplanner.modules.calendarprovider.EventExtraInfo
+import EventExtraInfo
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
-import com.zipdori.autoplanner.ui.home.HomeFragment
 import java.util.*
 
 class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
@@ -59,9 +56,11 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
                 if (result.resultCode == RESULT_OK) {
                     if (result.data != null) {
                         val modifiedEvent:EventsVO? = result.data?.getParcelableExtra("scheduleItem")
-                        val modifiedEventIdx = modifiedEvent!!.id.toInt()
+                        val modifiedEventExtra: EventExtraInfo = result.data?.getParcelableExtra("scheduleItemExtra")!!
+                        val modifiedEventIdx = modifiedEvent!!.id.toInt() //여기서 이벤트ID를 리스트의 인덱스로 사용중. 나중에 프로바이더에 insert될 때 어차피 새로 정해지는 id
                         scheduleList[modifiedEventIdx] = modifiedEvent
-                        scheduleCellAdaptor.notifyDataSetChanged()
+                        scheduleListExtra[modifiedEventIdx] = modifiedEventExtra
+                        scheduleCellAdaptor.notifyItemChanged(modifiedEventIdx)
                     }
                 }
                 if(result.resultCode == RESULT_CANCELED) {
@@ -88,11 +87,11 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
 
         // TODO : 사진 여러장을 선택해도 우선은 처음 선택된 이미지로 통일. 위의 할 일과 마찬가지로 인공지능이 적용되면 맞춤형으로 코드가 바뀌어야 할 부분
         scheduleListExtra.apply{
-            add(EventExtraInfo(0,0,imgList[0]))
-            add(EventExtraInfo(0,0,imgList[0]))
-            add(EventExtraInfo(0,0,imgList[0]))
-            add(EventExtraInfo(0,0,imgList[0]))
-            add(EventExtraInfo(0,0,imgList[0]))
+            add(EventExtraInfo(0, 0, imgList[0]))
+            add(EventExtraInfo(0, 0, imgList[0]))
+            add(EventExtraInfo(0, 0, imgList[0]))
+            add(EventExtraInfo(0, 0, imgList[0]))
+            add(EventExtraInfo(0, 0, imgList[0]))
         }
 
         val scheduleListBool = BooleanArray(scheduleList.size) { true }
