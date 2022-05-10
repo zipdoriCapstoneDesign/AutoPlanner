@@ -18,7 +18,6 @@ import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.zipdori.autoplanner.R
-import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.ui.home.ScheduleBeltAdapter
 import com.zipdori.autoplanner.ui.home.ScheduleListAdapter
@@ -29,6 +28,7 @@ import kotlin.collections.ArrayList
 class MonthAdapter(
     val context: Context,
     calendar: Calendar,
+    var schedules: HashMap<String, ArrayList<EventsVO>>,
     val getResultSetSchedule: ActivityResultLauncher<Intent>
     ) : BaseAdapter() {
     private val layoutInflater: LayoutInflater
@@ -36,13 +36,12 @@ class MonthAdapter(
     private val dateManager: DateManager
     private var dateArray: ArrayList<Date>
     private var onEventsChangeListener: ScheduleListAdapter.OnEventsChangeListener?
-    private val commonModule: CommonModule = CommonModule(context)
     var scheduleListAdapter: ScheduleListAdapter?
 
     init {
         layoutInflater = LayoutInflater.from(context)
         this.calendar.time = calendar.time
-        dateManager = DateManager(calendar)
+        dateManager = DateManager(this.calendar)
         dateArray = dateManager.getDays()
         this.onEventsChangeListener = null
         this.scheduleListAdapter = null
@@ -123,7 +122,7 @@ class MonthAdapter(
             viewHolder.tvDate.setBackgroundColor(Color.BLACK)
         }
 
-        val eventsVOArrayList: ArrayList<EventsVO>? = commonModule.getEventsVOArrayList(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
+        val eventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
         viewHolder.rvScheduleBelt.layoutManager = LinearLayoutManager(context)
         if (eventsVOArrayList != null) {
             val scheduleBeltAdapter: ScheduleBeltAdapter = ScheduleBeltAdapter(context, eventsVOArrayList)

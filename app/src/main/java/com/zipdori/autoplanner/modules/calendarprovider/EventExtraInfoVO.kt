@@ -3,7 +3,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-class EventExtraInfo(
+class EventExtraInfoVO(
     var _id:Int,
     var event_id:Long,
     var photo: Uri?

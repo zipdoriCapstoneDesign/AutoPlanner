@@ -8,7 +8,7 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 class CommonModule(val context: Context) {
-    fun getEventsAsHashmap() : HashMap<String, ArrayList<EventsVO>> {
+    fun getAllEventsAsHashmap() : HashMap<String, ArrayList<EventsVO>> {
         // 기존 일정 불러오기
         val schedules: HashMap<String, ArrayList<EventsVO>> = HashMap()
 
@@ -55,7 +55,7 @@ class CommonModule(val context: Context) {
     }
 
     fun getEventsVOArrayList(dateFormat : String) : ArrayList<EventsVO>? {
-        val eventsVOArrayList: ArrayList<EventsVO>? = getEventsAsHashmap().get(dateFormat)
+        val eventsVOArrayList: ArrayList<EventsVO>? = getAllEventsAsHashmap().get(dateFormat)
         if (eventsVOArrayList != null) {
             eventsVOArrayList.sortBy { it.dtStart }
         }

@@ -20,12 +20,12 @@ import java.util.*
 import android.widget.LinearLayout
 
 
-import EventExtraInfo
+import EventExtraInfoVO
 
 class ScheduleCellAdapter(val context: Context, val saveIntent: ActivityResultLauncher<Intent>) :
     RecyclerView.Adapter<ScheduleCellAdapter.ViewHolder>() {
         var scheduleList= mutableListOf<EventsVO>()
-        var scheduleListExtra = mutableListOf<EventExtraInfo>()
+        var scheduleListExtra = mutableListOf<EventExtraInfoVO>()
         var scheduleListBool:BooleanArray = BooleanArray(0)
     override fun onCreateViewHolder(
         parent: ViewGroup,

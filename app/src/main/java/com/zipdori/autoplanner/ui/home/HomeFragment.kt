@@ -35,8 +35,7 @@ import com.zipdori.autoplanner.databinding.FragmentHomeBinding
 import com.zipdori.autoplanner.modules.App
 import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
-import EventExtraInfo
-import androidx.core.content.ContextCompat
+import EventExtraInfoVO
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
@@ -76,6 +75,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var getResultSetSchedule: ActivityResultLauncher<Intent>
     val monthAdapterArrayList: ArrayList<MonthAdapter> = ArrayList()
 
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -106,8 +106,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
         getResultSetSchedule = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
-                    val tempEvent: EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
-                    val tempEventExtra: EventExtraInfo = result.data?.getParcelableExtra("scheduleItemExtra")!!
+                    val tempEventsVO: EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
+                    val tempEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
                     val sharedPreferences: SharedPreferences =
                         requireActivity().getSharedPreferences(
                             getString(R.string.preference_file_key),
@@ -115,17 +115,17 @@ class HomeFragment : Fragment(), View.OnClickListener {
                         )
                     val calendarId =
                         sharedPreferences.getLong(getString(R.string.calendar_index), 0)
-                    val id = tempEvent.id
-                    val title = tempEvent.title
-                    val eventLocation = tempEvent.eventLocation
-                    val description = tempEvent.description
-                    val eventColor = tempEvent.eventColor
-                    val dtStart = tempEvent.dtStart
-                    val dtEnd = tempEvent.dtEnd!!
-                    val duration = tempEvent.duration
-                    val allDay = tempEvent.allDay
-                    val rRule = tempEvent.rRule
-                    val rDate = tempEvent.rDate
+                    val id = tempEventsVO.id
+                    val title = tempEventsVO.title
+                    val eventLocation = tempEventsVO.eventLocation
+                    val description = tempEventsVO.description
+                    val eventColor = tempEventsVO.eventColor
+                    val dtStart = tempEventsVO.dtStart
+                    val dtEnd = tempEventsVO.dtEnd!!
+                    val duration = tempEventsVO.duration
+                    val allDay = tempEventsVO.allDay
+                    val rRule = tempEventsVO.rRule
+                    val rDate = tempEventsVO.rDate
                     val eventTimeZone = "UTC"
 
                     // id가 -1이면 새로운 Event를 추가하는 것으로 간주
@@ -146,8 +146,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             rRule,
                             rDate
                         )
-                        tempEventExtra.event_id = eventId
-                        autoPlannerDBModule.insertExtraInfo(tempEventExtra.event_id,tempEventExtra.photo.toString())
+                        tempEventExtraVO.event_id = eventId
+                        autoPlannerDBModule.insertExtraInfo(tempEventExtraVO.event_id,tempEventExtraVO.photo.toString())
                     } else {
                         calendarProviderModule.updateEvent(
                             id,
@@ -163,24 +163,18 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             rRule,
                             rDate
                         )
-                        autoPlannerDBModule.updateExtraInfo(tempEventExtra._id, tempEventExtra.event_id, tempEventExtra.photo.toString())
+                        autoPlannerDBModule.updateExtraInfo(tempEventExtraVO._id, tempEventExtraVO.event_id, tempEventExtraVO.photo.toString())
 
+                        val schedules: HashMap<String, ArrayList<EventsVO>> = commonModule.getAllEventsAsHashmap()
                         for (monthAdapter in monthAdapterArrayList) {
+                            monthAdapter.schedules = schedules
                             if (monthAdapter.scheduleListAdapter != null) {
                                 val date: Date = monthAdapter.scheduleListAdapter!!.getDate()
-                                var tempEventsVOArrayList: ArrayList<EventsVO>? =
-                                    commonModule.getEventsVOArrayList(
-                                        SimpleDateFormat(
-                                            "yyyy.MM.dd",
-                                            Locale.US
-                                        ).format(date)
-                                    )
+                                var tempEventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(date))
                                 if (tempEventsVOArrayList == null) {
                                     tempEventsVOArrayList = ArrayList()
                                 }
-                                monthAdapter.scheduleListAdapter!!.setEventsVOArrayList(
-                                    tempEventsVOArrayList
-                                )
+                                monthAdapter.scheduleListAdapter!!.setEventsVOArrayList(tempEventsVOArrayList)
                                 monthAdapter.scheduleListAdapter!!.notifyDataSetChanged()
                             }
                         }
@@ -188,14 +182,14 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
                     // TODO: 2022-04-06 더 효율적인 방법 구상해보기
                     val calendar: Calendar = Calendar.getInstance()
-                    calendar.timeInMillis = tempEvent.dtStart
+                    calendar.timeInMillis = tempEventsVO.dtStart
                     drawCalendar()
                     setViewPager2Position(calendar, false)
                 }
                 else if (result.resultCode == Consts.RESULT_SCHEDULELIST_REG) { // 스케줄리스트 액티비티에서 체크한 일정들이 넘어오는 곳
                     val tempEventList: ArrayList<EventsVO> =
                         result.data?.getParcelableArrayListExtra("checkedList")!!
-                    val tempEventListExtra: ArrayList<EventExtraInfo> =
+                    val tempEventListExtraVO: ArrayList<EventExtraInfoVO> =
                         result.data?.getParcelableArrayListExtra("checkedListExtra")!!
 
                     val sharedPreferences: SharedPreferences =
@@ -209,7 +203,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
                         CalendarProviderModule(requireActivity().applicationContext)
 
                     val it = tempEventList.iterator()
-                    val itExtra = tempEventListExtra.iterator()
+                    val itExtra = tempEventListExtraVO.iterator()
                     while (it.hasNext()) {
                         // 체크했던 이벤트를 캘린더에 넣는 작업
                         // 일단 체크한 일정은 모두 넣지만, 나중에 일정 중복 감지 기능을 고려할 여지가 있음
@@ -256,9 +250,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 }
         }
 
-        drawCalendar()
-        setViewPager2CurMonth(false)
-
         fabAI.setOnClickListener(this)
         fabPhoto.setOnClickListener(this)
         fabGallery.setOnClickListener(this)
@@ -273,6 +264,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         super.onCreateOptionsMenu(menu, inflater)
         inflater.inflate(R.menu.fragment_home, menu)
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        drawCalendar()
+        setViewPager2CurMonth(false)
     }
 
     override fun onDestroyView() {
@@ -516,8 +514,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
         calendar.set(Calendar.YEAR, 1902)
         calendar.set(Calendar.MONTH, 0)
         calendar.set(Calendar.DATE, 1)
+        val schedules: HashMap<String, ArrayList<EventsVO>> = commonModule.getAllEventsAsHashmap()
         for (i in 0 until 2400) {
-            val monthAdapter: MonthAdapter = MonthAdapter(context!!, calendar, getResultSetSchedule)
+            val monthAdapter: MonthAdapter = MonthAdapter(context!!, calendar, schedules, getResultSetSchedule)
             monthAdapter.setOnEventsChangeListener(object : ScheduleListAdapter.OnEventsChangeListener {
                 override fun onEventsChange(calendar: Calendar) {
                     drawCalendar()
