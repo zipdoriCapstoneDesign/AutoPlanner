@@ -1,5 +1,6 @@
 package com.zipdori.autoplanner.ui.home
 
+import EventExtraInfoVO
 import android.Manifest
 import android.app.Activity
 import android.app.Activity.RESULT_OK
@@ -8,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -25,7 +27,10 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.gms.tasks.Task
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.functions.FirebaseFunctions
+import com.google.gson.*
 import com.toyproject.testproject3_zipdori.ui.home.MonthAdapter
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_CAMERA
@@ -35,11 +40,12 @@ import com.zipdori.autoplanner.databinding.FragmentHomeBinding
 import com.zipdori.autoplanner.modules.App
 import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
-import EventExtraInfoVO
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
+import java.io.ByteArrayOutputStream
+import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -67,7 +73,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     private lateinit var autoPlannerDBModule: AutoPlannerDBModule
 
-    var imgList = ArrayList<Uri>() //사진 다중 선택할 때 사진 Uri 담는 리스트
     var singleUri:Uri? = null //카메라 사용시 카메라 키기 전에 만드는 uri 전역변수로 저장, 다른 함수에서 활용
 
     private lateinit var commonModule: CommonModule
@@ -75,6 +80,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
     private lateinit var getResultSetSchedule: ActivityResultLauncher<Intent>
     val monthAdapterArrayList: ArrayList<MonthAdapter> = ArrayList()
 
+    private lateinit var functions: FirebaseFunctions
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -258,6 +264,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
         autoPlannerDBModule = AutoPlannerDBModule(context)
 
+        functions = FirebaseFunctions.getInstance()
+
         return root
     }
 
@@ -308,7 +316,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
             R.id.fab_ai -> toggleFab()
             R.id.fab_photo -> {
                 toggleFab()
-                Toast.makeText(context, "fab photo clicked", Toast.LENGTH_SHORT).show()
                 Log.e("홈카메라버튼",Manifest.permission.READ_EXTERNAL_STORAGE.toString() + " / " + Manifest.permission.WRITE_EXTERNAL_STORAGE.toString())
                 val NEED_PERMISSIONS = arrayOf(
                     Manifest.permission.CAMERA,
@@ -321,7 +328,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
             }
             R.id.fab_gallery -> {
                 toggleFab()
-                Toast.makeText(context, "fab gallery clicked", Toast.LENGTH_SHORT).show()
 
                 val NEED_PERMISSIONS = arrayOf(
                     Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -381,19 +387,74 @@ class HomeFragment : Fragment(), View.OnClickListener {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         when(requestCode){
             Consts.FLAG_REQ_CAMERA ->{
                 if(resultCode == Activity.RESULT_OK) {
-                    imgList.add(singleUri!!)
+                    Log.i("image uri", singleUri.toString())
+
+                    val base64encoded = encodeImgToBase64(singleUri!!)
+                    val request = makeJsonRequest(base64encoded)
+
+                    annotateImage(request.toString())
+                        .addOnCompleteListener { task ->
+                            if (!task.isSuccessful) {
+                                Log.e("Text recognition request", "failed")
+
+                            } else {
+                                Log.i("Text recognition request", "success")
+
+                                try {
+                                    val annotation = task.result!!.asJsonArray[0].asJsonObject["fullTextAnnotation"].asJsonObject
+                                    System.out.format("%nComplete annotation:")
+                                    System.out.format("%n%s", annotation["text"].asString)
+
+                                    for (page in annotation["pages"].asJsonArray) {
+                                        var pageText = ""
+                                        for (block in page.asJsonObject["blocks"].asJsonArray) {
+                                            var blockText = ""
+                                            for (para in block.asJsonObject["paragraphs"].asJsonArray) {
+                                                var paraText = ""
+                                                for (word in para.asJsonObject["words"].asJsonArray) {
+                                                    var wordText = ""
+                                                    for (symbol in word.asJsonObject["symbols"].asJsonArray) {
+                                                        wordText += symbol.asJsonObject["text"].asString
+                                                        System.out.format("Symbol text: %s (confidence: %f)%n",
+                                                            symbol.asJsonObject["text"].asString, symbol.asJsonObject["confidence"].asFloat)
+                                                    }
+                                                    System.out.format("Word text: %s (confidence: %f)%n%n", wordText,
+                                                        word.asJsonObject["confidence"].asFloat)
+                                                    System.out.format("Word bounding box: %s%n", word.asJsonObject["boundingBox"])
+                                                    paraText = String.format("%s%s ", paraText, wordText)
+                                                }
+                                                System.out.format("%nParagraph: %n%s%n", paraText)
+                                                System.out.format("Paragraph bounding box: %s%n", para.asJsonObject["boundingBox"])
+                                                System.out.format("Paragraph Confidence: %f%n", para.asJsonObject["confidence"].asFloat)
+                                                blockText += paraText
+                                            }
+                                            pageText += blockText
+                                        }
+                                    }
+                                } catch (e: NullPointerException) {
+                                    e.printStackTrace()
+                                    Log.e("Text recognition", "The Image has no text.")
+                                }
+                            }
+                        }
+
+                    /*
                     val intent = Intent(context, ListupSchedulecellActivity::class.java)
                     startActivity(intent)
+
+                     */
                 }
                 else
                     requireActivity().contentResolver.delete(singleUri!!,null,null)
             }
             Consts.GET_GALLERY_IMAGE_MULTI->{
+                var imgList = ArrayList<Uri>()
                 imgList.clear()
                 if(data?.clipData != null){
                     val count = data.clipData!!.itemCount
@@ -414,13 +475,67 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             imgList.add(imageUri)
                         }
                     }
-
                 }
 
+                // TODO: 2022-05-11 인식된 글자들을 통한 일정 예측
                 if(imgList.isNotEmpty()) {
+                    for (imgUri in imgList) {
+                        val base64encoded = encodeImgToBase64(imgUri)
+                        val request = makeJsonRequest(base64encoded)
+
+                        annotateImage(request.toString())
+                            .addOnCompleteListener { task ->
+                                if (!task.isSuccessful) {
+                                    Log.e("text recognition", "failed")
+
+                                } else {
+                                    Log.i("text recognition", "success")
+
+                                    try {
+                                        val annotation = task.result!!.asJsonArray[0].asJsonObject["fullTextAnnotation"].asJsonObject
+                                        System.out.format("%nComplete annotation:")
+                                        System.out.format("%n%s", annotation["text"].asString)
+
+                                        for (page in annotation["pages"].asJsonArray) {
+                                            var pageText = ""
+                                            for (block in page.asJsonObject["blocks"].asJsonArray) {
+                                                var blockText = ""
+                                                for (para in block.asJsonObject["paragraphs"].asJsonArray) {
+                                                    var paraText = ""
+                                                    for (word in para.asJsonObject["words"].asJsonArray) {
+                                                        var wordText = ""
+                                                        for (symbol in word.asJsonObject["symbols"].asJsonArray) {
+                                                            wordText += symbol.asJsonObject["text"].asString
+                                                            System.out.format("Symbol text: %s (confidence: %f)%n",
+                                                                symbol.asJsonObject["text"].asString, symbol.asJsonObject["confidence"].asFloat)
+                                                        }
+                                                        System.out.format("Word text: %s (confidence: %f)%n%n", wordText,
+                                                            word.asJsonObject["confidence"].asFloat)
+                                                        System.out.format("Word bounding box: %s%n", word.asJsonObject["boundingBox"])
+                                                        paraText = String.format("%s%s ", paraText, wordText)
+                                                    }
+                                                    System.out.format("%nParagraph: %n%s%n", paraText)
+                                                    System.out.format("Paragraph bounding box: %s%n", para.asJsonObject["boundingBox"])
+                                                    System.out.format("Paragraph Confidence: %f%n", para.asJsonObject["confidence"].asFloat)
+                                                    blockText += paraText
+                                                }
+                                                pageText += blockText
+                                            }
+                                        }
+                                    } catch (e: NullPointerException) {
+                                        e.printStackTrace()
+                                        Log.e("Text recognition", "The Image has no text.")
+                                    }
+                                }
+                            }
+                    }
+
+                    /*
                     val intent = Intent(context, ListupSchedulecellActivity::class.java)
                     intent.putParcelableArrayListExtra("imgURIs", imgList)
                     getResultSetSchedule.launch(intent)
+
+                     */
                 }
             }
         }
@@ -448,7 +563,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
                     }
                 }
                 Log.e("승인절차","카메라 승인 확인")
-                imgList.clear()
                 val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
                 val uri: Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
 
@@ -538,5 +652,56 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 super.onPageSelected(position)
             }
         })
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun encodeImgToBase64(imgUri: Uri): String {
+        var bitmap: Bitmap = MediaStore.Images.Media.getBitmap(context!!.contentResolver, imgUri)
+
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
+        val imageBytes: ByteArray = byteArrayOutputStream.toByteArray()
+        val base64encoded = Base64.getEncoder().encodeToString(imageBytes)
+
+        return base64encoded
+    }
+
+    private fun makeJsonRequest(base64encoded: String) : JsonObject {
+        // Create json request to cloud vision
+        val request = JsonObject()
+        // Add image to request
+        val image = JsonObject()
+        image.add("content", JsonPrimitive(base64encoded))
+        request.add("image", image)
+        //Add features to the request
+        val feature = JsonObject()
+        feature.add("type", JsonPrimitive("TEXT_DETECTION"))
+        // Alternatively, for DOCUMENT_TEXT_DETECTION:
+        // feature.add("type", JsonPrimitive("DOCUMENT_TEXT_DETECTION"))
+        val features = JsonArray()
+        features.add(feature)
+        request.add("features", features)
+
+        // Add language hints
+        val imageContext = JsonObject()
+        val languageHints = JsonArray()
+        languageHints.add("ko")
+        imageContext.add("languageHints", languageHints)
+        request.add("imageContext", imageContext)
+
+        return request
+    }
+
+    private fun annotateImage(requestJson: String): Task<JsonElement> {
+        return functions
+            .getHttpsCallable("annotateImage")
+            .call(requestJson)
+            .continueWith { task ->
+                // This continuation runs on either success or failure, but if the task
+                // has failed then result will throw an Exception which will be
+                // propagated down.
+                val result = task.result?.data
+                JsonParser.parseString(Gson().toJson(result))
+            }
     }
 }

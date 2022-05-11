@@ -81,7 +81,7 @@ captures/
 *.keystore
 
 # Google Services (e.g. APIs or Firebase)
-# google-services.json
+google-services.json
 
 # Android Patch
 gen-external-apklibs
@@ -158,3 +158,12 @@ fabric.properties
 !/gradle/wrapper/gradle-wrapper.jar
 
 # End of https://www.toptal.com/developers/gitignore/api/androidstudio,kotlin
+
+### Firebase ###
+.idea
+**/node_modules/*
+**/.firebaserc
+
+### Firebase Patch ###
+.runtimeconfig.json
+.firebase/

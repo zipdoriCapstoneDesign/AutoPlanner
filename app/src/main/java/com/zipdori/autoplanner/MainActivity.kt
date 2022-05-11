@@ -16,6 +16,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
+import com.google.firebase.auth.FirebaseAuth
 import com.zipdori.autoplanner.databinding.ActivityMainBinding
 import com.zipdori.autoplanner.modules.PermissionModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
@@ -28,7 +29,11 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var drawerLayout: DrawerLayout
 
+    private lateinit var auth: FirebaseAuth
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        setTheme(R.style.Theme_AutoPlanner_NoActionBar)
+
         super.onCreate(savedInstanceState)
 
         if (checkSelfPermission(Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_GRANTED &&
@@ -46,6 +51,14 @@ class MainActivity : AppCompatActivity() {
 
             PermissionModule.requestPermissionsIfNotExists(NEED_PERMISSIONS, NEED_PERMISSIONS_FLAGS, this)
         }
+
+        auth = FirebaseAuth.getInstance()
+    }
+
+    override fun onStart() {
+        super.onStart()
+
+        auth.signInAnonymously()
     }
 
     override fun onBackPressed() {
