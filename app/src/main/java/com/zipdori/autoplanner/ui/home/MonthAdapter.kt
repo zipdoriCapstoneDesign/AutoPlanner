@@ -3,6 +3,7 @@ package com.toyproject.testproject3_zipdori.ui.home
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.view.LayoutInflater
@@ -17,8 +18,10 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.FragmentActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
+import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import com.zipdori.autoplanner.ui.home.ScheduleBeltAdapter
 import com.zipdori.autoplanner.ui.home.ScheduleListAdapter
 import java.text.SimpleDateFormat
@@ -122,15 +125,13 @@ class MonthAdapter(
             viewHolder.tvDate.setBackgroundColor(Color.BLACK)
         }
 
-        val eventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
-        viewHolder.rvScheduleBelt.layoutManager = LinearLayoutManager(context)
-        if (eventsVOArrayList != null) {
-            val scheduleBeltAdapter: ScheduleBeltAdapter = ScheduleBeltAdapter(context, eventsVOArrayList)
-            viewHolder.rvScheduleBelt.adapter = scheduleBeltAdapter
-        } else {
-            val scheduleBeltAdapter: ScheduleBeltAdapter = ScheduleBeltAdapter(context, ArrayList<EventsVO>())
-            viewHolder.rvScheduleBelt.adapter = scheduleBeltAdapter
+        var eventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(dateArray.get(position)))
+        if (eventsVOArrayList == null) {
+            eventsVOArrayList = ArrayList<EventsVO>()
         }
+        viewHolder.rvScheduleBelt.layoutManager = LinearLayoutManager(context)
+        val scheduleBeltAdapter: ScheduleBeltAdapter = ScheduleBeltAdapter(context, eventsVOArrayList)
+        viewHolder.rvScheduleBelt.adapter = scheduleBeltAdapter
         viewHolder.rvScheduleBelt.suppressLayout(true)
 
         convertView?.setOnClickListener(View.OnClickListener {
@@ -141,6 +142,7 @@ class MonthAdapter(
             val tvDayDss: TextView = constraintLayout.findViewById(R.id.tv_day_dss)
             val tvLunarCalendar: TextView = constraintLayout.findViewById(R.id.tv_lunar_calendar_dss)
             val rvDss: RecyclerView = constraintLayout.findViewById(R.id.rv_dss)
+            val fabDss: FloatingActionButton = constraintLayout.findViewById(R.id.fab_add_dss)
 
             tvDateDss.text = SimpleDateFormat("d", Locale.US).format(date)
             tvDayDss.text = SimpleDateFormat("E", Locale.KOREA).format(date) + "요일"
@@ -150,11 +152,31 @@ class MonthAdapter(
             tvDateDss.setTextColor(colorId)
             tvDayDss.setTextColor(colorId)
 
-            if (eventsVOArrayList != null) {
-                scheduleListAdapter = ScheduleListAdapter(context, eventsVOArrayList, date, getResultSetSchedule)
-                scheduleListAdapter!!.setOnEventsChangeListener(onEventsChangeListener!!)
-                rvDss.layoutManager = LinearLayoutManager(context)
-                rvDss.adapter = scheduleListAdapter
+            scheduleListAdapter = ScheduleListAdapter(context, eventsVOArrayList, date, getResultSetSchedule)
+            scheduleListAdapter!!.setOnEventsChangeListener(onEventsChangeListener!!)
+            rvDss.layoutManager = LinearLayoutManager(context)
+            rvDss.adapter = scheduleListAdapter
+
+            fabDss.setOnClickListener {
+                val intent = Intent(context, SetScheduleActivity::class.java)
+
+                val fromCal = Calendar.getInstance()
+                val toCal = Calendar.getInstance()
+
+                fromCal.time = date
+                toCal.time = date
+
+                fromCal.add(Calendar.HOUR, 1)
+                fromCal.set(Calendar.MINUTE, 0)
+                toCal.add(Calendar.HOUR, 2)
+                toCal.set(Calendar.MINUTE, 0)
+
+                val sharedPreferences: SharedPreferences = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+                val calendarId = sharedPreferences.getLong(context.getString(R.string.calendar_index), 0)
+                val tempEvent = EventsVO(-1, calendarId,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
+                intent.putExtra("SingleScheduleData", tempEvent)
+
+                getResultSetSchedule.launch(intent)
             }
 
             val builder: AlertDialog.Builder = AlertDialog.Builder(context)

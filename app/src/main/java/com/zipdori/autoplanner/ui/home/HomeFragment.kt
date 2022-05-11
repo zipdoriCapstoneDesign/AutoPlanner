@@ -113,7 +113,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
             ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     val tempEventsVO: EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
-                    val tempEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
+                    // val tempEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
                     val sharedPreferences: SharedPreferences =
                         requireActivity().getSharedPreferences(
                             getString(R.string.preference_file_key),
@@ -152,8 +152,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             rRule,
                             rDate
                         )
-                        tempEventExtraVO.event_id = eventId
-                        autoPlannerDBModule.insertExtraInfo(tempEventExtraVO.event_id,tempEventExtraVO.photo.toString())
+                        // tempEventExtraVO.event_id = eventId
+                        // autoPlannerDBModule.insertExtraInfo(tempEventExtraVO.event_id,tempEventExtraVO.photo.toString())
                     } else {
                         calendarProviderModule.updateEvent(
                             id,
@@ -169,20 +169,20 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             rRule,
                             rDate
                         )
-                        autoPlannerDBModule.updateExtraInfo(tempEventExtraVO._id, tempEventExtraVO.event_id, tempEventExtraVO.photo.toString())
+                        // autoPlannerDBModule.updateExtraInfo(tempEventExtraVO._id, tempEventExtraVO.event_id, tempEventExtraVO.photo.toString())
+                    }
 
-                        val schedules: HashMap<String, ArrayList<EventsVO>> = commonModule.getAllEventsAsHashmap()
-                        for (monthAdapter in monthAdapterArrayList) {
-                            monthAdapter.schedules = schedules
-                            if (monthAdapter.scheduleListAdapter != null) {
-                                val date: Date = monthAdapter.scheduleListAdapter!!.getDate()
-                                var tempEventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(date))
-                                if (tempEventsVOArrayList == null) {
-                                    tempEventsVOArrayList = ArrayList()
-                                }
-                                monthAdapter.scheduleListAdapter!!.setEventsVOArrayList(tempEventsVOArrayList)
-                                monthAdapter.scheduleListAdapter!!.notifyDataSetChanged()
+                    val schedules: HashMap<String, ArrayList<EventsVO>> = commonModule.getAllEventsAsHashmap()
+                    for (monthAdapter in monthAdapterArrayList) {
+                        monthAdapter.schedules = schedules
+                        if (monthAdapter.scheduleListAdapter != null) {
+                            val date: Date = monthAdapter.scheduleListAdapter!!.getDate()
+                            var tempEventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(date))
+                            if (tempEventsVOArrayList == null) {
+                                tempEventsVOArrayList = ArrayList()
                             }
+                            monthAdapter.scheduleListAdapter!!.setEventsVOArrayList(tempEventsVOArrayList)
+                            monthAdapter.scheduleListAdapter!!.notifyDataSetChanged()
                         }
                     }
 
@@ -349,16 +349,15 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 val toCal = Calendar.getInstance()
 
                 // 기본 일정 추가 버튼은 현재시간과 +1시간으로 범위 설정
-                toCal.add(Calendar.HOUR,1)
+                fromCal.add(Calendar.HOUR, 1)
+                fromCal.set(Calendar.MINUTE, 0)
+                toCal.add(Calendar.HOUR, 2)
+                toCal.set(Calendar.MINUTE, 0)
 
                 val sharedPreferences: SharedPreferences = requireActivity().getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
                 val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
                 val tempEvent = EventsVO(-1, calendarId,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
                 intent.putExtra("SingleScheduleData", tempEvent)
-
-                val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
-                val uri: Uri? = createImageUri("JPEG_${timeStamp}_", "image/jpeg")
-                Log.e("Uri",uri.toString())
 
                 getResultSetSchedule.launch(intent)
             }
