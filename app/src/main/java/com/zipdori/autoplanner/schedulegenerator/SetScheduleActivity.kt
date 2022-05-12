@@ -236,10 +236,9 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
                 val intent = Intent()
                 setResult(RESULT_OK, intent)
                 intent.putExtra("scheduleItem", tempEvent)
-                if(tempEventExtraVO!=null) {
-                    tempEventExtraVO!!.photo = selectedImageUri
-                    intent.putExtra("scheduleItemExtra",tempEventExtraVO)
-                }
+                tempEventExtraVO!!.photo = selectedImageUri
+
+                intent.putExtra("scheduleItemExtra",tempEventExtraVO)
                 if (!isFinishing) finish()
             }
         }

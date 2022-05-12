@@ -113,7 +113,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
             ActivityResultContracts.StartActivityForResult()) { result ->
                 if (result.resultCode == RESULT_OK) {
                     val tempEventsVO: EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
-                    // val tempEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
+                    val tempEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
                     val sharedPreferences: SharedPreferences =
                         requireActivity().getSharedPreferences(
                             getString(R.string.preference_file_key),
@@ -152,8 +152,8 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             rRule,
                             rDate
                         )
-                        // tempEventExtraVO.event_id = eventId
-                        // autoPlannerDBModule.insertExtraInfo(tempEventExtraVO.event_id,tempEventExtraVO.photo.toString())
+                        tempEventExtraVO.event_id = eventId
+                        autoPlannerDBModule.insertExtraInfo(tempEventExtraVO.event_id,tempEventExtraVO.photo.toString())
                     } else {
                         calendarProviderModule.updateEvent(
                             id,
@@ -169,7 +169,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
                             rRule,
                             rDate
                         )
-                        // autoPlannerDBModule.updateExtraInfo(tempEventExtraVO._id, tempEventExtraVO.event_id, tempEventExtraVO.photo.toString())
+                        autoPlannerDBModule.updateExtraInfo(tempEventExtraVO._id, tempEventExtraVO.event_id, tempEventExtraVO.photo.toString())
                     }
 
                     val schedules: HashMap<String, ArrayList<EventsVO>> = commonModule.getAllEventsAsHashmap()
@@ -357,7 +357,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
                 val sharedPreferences: SharedPreferences = requireActivity().getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
                 val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
                 val tempEvent = EventsVO(-1, calendarId,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
+                val tempEventExtra = EventExtraInfoVO(0,0,null)
                 intent.putExtra("SingleScheduleData", tempEvent)
+                intent.putExtra("SingleScheduleDataExtra", tempEventExtra)
 
                 getResultSetSchedule.launch(intent)
             }
@@ -442,12 +444,13 @@ class HomeFragment : Fragment(), View.OnClickListener {
                                 }
                             }
                         }
-
-                    /*
                     val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                    var imgList = ArrayList<Uri>()
+                    imgList.add(singleUri!!)
+                    intent.putParcelableArrayListExtra("imgURIs", imgList)
+
                     startActivity(intent)
 
-                     */
                 }
                 else
                     requireActivity().contentResolver.delete(singleUri!!,null,null)
@@ -528,13 +531,9 @@ class HomeFragment : Fragment(), View.OnClickListener {
                                 }
                             }
                     }
-
-                    /*
                     val intent = Intent(context, ListupSchedulecellActivity::class.java)
                     intent.putParcelableArrayListExtra("imgURIs", imgList)
                     getResultSetSchedule.launch(intent)
-
-                     */
                 }
             }
         }
