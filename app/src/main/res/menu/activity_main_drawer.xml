@@ -5,9 +5,9 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_home"
-            android:icon="@drawable/ic_menu_camera"
-            android:title="@string/menu_home" />
+            android:id="@+id/nav_calendar"
+            android:icon="@drawable/ic_baseline_calendar_month_24_black"
+            android:title="@string/menu_calendar" />
         <!--
         <item
             android:id="@+id/nav_gallery"
@@ -15,8 +15,8 @@
             android:title="@string/menu_text_input" />
             -->
         <item
-            android:id="@+id/nav_slideshow"
-            android:icon="@drawable/ic_menu_slideshow"
-            android:title="@string/menu_slideshow" />
+            android:id="@+id/nav_trash_can"
+            android:icon="@drawable/ic_baseline_restore_from_trash_24_black"
+            android:title="@string/menu_trash_can" />
     </group>
 </menu>

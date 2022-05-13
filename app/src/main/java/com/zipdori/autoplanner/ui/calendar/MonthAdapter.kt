@@ -1,5 +1,6 @@
 package com.toyproject.testproject3_zipdori.ui.home
 
+import EventExtraInfoVO
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -22,8 +23,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
-import com.zipdori.autoplanner.ui.home.ScheduleBeltAdapter
-import com.zipdori.autoplanner.ui.home.ScheduleListAdapter
+import com.zipdori.autoplanner.ui.calendar.ScheduleBeltAdapter
+import com.zipdori.autoplanner.ui.calendar.ScheduleListAdapter
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -174,7 +175,9 @@ class MonthAdapter(
                 val sharedPreferences: SharedPreferences = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE)
                 val calendarId = sharedPreferences.getLong(context.getString(R.string.calendar_index), 0)
                 val tempEvent = EventsVO(-1, calendarId,null,null,null,null,-10572033,-10572033,fromCal.timeInMillis,toCal.timeInMillis,"UTC",null,null,null,null,null,null,null)
+                val tempEventExtra = EventExtraInfoVO(0,0,null)
                 intent.putExtra("SingleScheduleData", tempEvent)
+                intent.putExtra("SingleScheduleDataExtra", tempEventExtra)
 
                 getResultSetSchedule.launch(intent)
             }

@@ -1,4 +1,4 @@
-package com.zipdori.autoplanner.ui.home
+package com.zipdori.autoplanner.ui.calendar
 
 import android.content.Context
 import android.view.LayoutInflater

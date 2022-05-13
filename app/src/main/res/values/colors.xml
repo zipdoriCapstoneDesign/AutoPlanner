@@ -7,6 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="black_50pct">#80000000</color>
+    <color name="dark_grayish_orange">#FF3C3A39</color>
     <color name="white">#FFFFFFFF</color>
     <color name="light_gray">#FFD3D3D3</color>
     <color name="gray">#FF808080</color>
@@ -17,4 +18,8 @@
     <color name="holiday">#FFDF8084</color>
     <color name="user_schedule">#FF71C4E6</color>
     <color name="blue_gray">#FF6699CC</color>
+    <color name="nav_bar_head">#FFFEDED7</color>
+    <color name="salmon_200">#FFFB9D88</color>
+    <color name="salmon_500">#FFFD8469</color>
+    <color name="salmon_700">#FFFC4A22</color>
 </resources>

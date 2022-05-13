@@ -1,5 +1,6 @@
-package com.zipdori.autoplanner.ui.home
+package com.zipdori.autoplanner.ui.calendar
 
+import EventExtraInfoVO
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface

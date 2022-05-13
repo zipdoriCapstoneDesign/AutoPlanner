@@ -1,4 +1,4 @@
-package com.zipdori.autoplanner.ui.home
+package com.zipdori.autoplanner.ui.calendar
 
 import EventExtraInfoVO
 import android.Manifest
@@ -36,7 +36,7 @@ import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_CAMERA
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE_MULTIPICK
 import com.zipdori.autoplanner.R
-import com.zipdori.autoplanner.databinding.FragmentHomeBinding
+import com.zipdori.autoplanner.databinding.FragmentCalendarBinding
 import com.zipdori.autoplanner.modules.App
 import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
@@ -50,10 +50,10 @@ import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
 
-class HomeFragment : Fragment(), View.OnClickListener {
+class CalendarFragment : Fragment(), View.OnClickListener {
 
-    private lateinit var homeViewModel: HomeViewModel
-    private var _binding: FragmentHomeBinding? = null
+    private lateinit var calendarViewModel: CalendarViewModel
+    private var _binding: FragmentCalendarBinding? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -87,10 +87,10 @@ class HomeFragment : Fragment(), View.OnClickListener {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        homeViewModel =
-            ViewModelProvider(this).get(HomeViewModel::class.java)
+        calendarViewModel =
+            ViewModelProvider(this).get(CalendarViewModel::class.java)
 
-        _binding = FragmentHomeBinding.inflate(inflater, container, false)
+        _binding = FragmentCalendarBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
         setHasOptionsMenu(true)
@@ -288,9 +288,6 @@ class HomeFragment : Fragment(), View.OnClickListener {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.action_search -> {
-                // TODO: 2022-03-17 Item Search 클릭 시 action 구현
-            }
             R.id.action_today -> {
                 setViewPager2CurMonth(true)
             }
@@ -339,7 +336,7 @@ class HomeFragment : Fragment(), View.OnClickListener {
             }
             R.id.fab_text -> {
                 toggleFab()
-                view.findNavController().navigate(R.id.action_nav_home_to_nav_text_input)
+                view.findNavController().navigate(R.id.action_nav_calendar_to_nav_text_input)
             }
             R.id.fab_add -> {
                 val intent = Intent(context, SetScheduleActivity::class.java)

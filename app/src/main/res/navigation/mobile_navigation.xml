@@ -3,15 +3,15 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_home">
+    app:startDestination="@+id/nav_calendar">
 
     <fragment
-        android:id="@+id/nav_home"
-        android:name="com.zipdori.autoplanner.ui.home.HomeFragment"
-        android:label="@string/menu_home"
-        tools:layout="@layout/fragment_home" >
+        android:id="@+id/nav_calendar"
+        android:name="com.zipdori.autoplanner.ui.calendar.CalendarFragment"
+        android:label="@string/menu_calendar"
+        tools:layout="@layout/fragment_calendar" >
         <action
-            android:id="@+id/action_nav_home_to_nav_text_input"
+            android:id="@+id/action_nav_calendar_to_nav_text_input"
             app:destination="@id/nav_text_input" />
     </fragment>
 
@@ -22,8 +22,8 @@
         tools:layout="@layout/fragment_text_input" />
 
     <fragment
-        android:id="@+id/nav_slideshow"
-        android:name="com.zipdori.autoplanner.ui.slideshow.SlideshowFragment"
-        android:label="@string/menu_slideshow"
-        tools:layout="@layout/fragment_slideshow" />
+        android:id="@+id/nav_trash_can"
+        android:name="com.zipdori.autoplanner.ui.trashcan.TrashCanFragment"
+        android:label="@string/menu_trash_can"
+        tools:layout="@layout/fragment_trash_can" />
 </navigation>

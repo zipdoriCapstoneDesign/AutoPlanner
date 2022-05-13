@@ -1,4 +1,4 @@
-package com.zipdori.autoplanner.ui.slideshow
+package com.zipdori.autoplanner.ui.trashcan
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,13 +8,12 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import com.zipdori.autoplanner.R
-import com.zipdori.autoplanner.databinding.FragmentSlideshowBinding
+import com.zipdori.autoplanner.databinding.FragmentTrashCanBinding
 
-class SlideshowFragment : Fragment() {
+class TrashCanFragment : Fragment() {
 
-    private lateinit var slideshowViewModel: SlideshowViewModel
-    private var _binding: FragmentSlideshowBinding? = null
+    private lateinit var trashCanViewModel: TrashCanViewModel
+    private var _binding: FragmentTrashCanBinding? = null
 
     // This property is only valid between onCreateView and
     // onDestroyView.
@@ -25,16 +24,19 @@ class SlideshowFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        slideshowViewModel =
-            ViewModelProvider(this).get(SlideshowViewModel::class.java)
+        trashCanViewModel =
+            ViewModelProvider(this).get(TrashCanViewModel::class.java)
 
-        _binding = FragmentSlideshowBinding.inflate(inflater, container, false)
+        _binding = FragmentTrashCanBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
+        /*
         val textView: TextView = binding.textSlideshow
-        slideshowViewModel.text.observe(viewLifecycleOwner, Observer {
+        trashCanViewModel.text.observe(viewLifecycleOwner, Observer {
             textView.text = it
         })
+
+         */
         return root
     }
 
