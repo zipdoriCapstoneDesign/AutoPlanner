@@ -17,6 +17,7 @@ import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.modules.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
+import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.text.SimpleDateFormat
 import java.util.*
@@ -27,6 +28,7 @@ class ScheduleListAdapter(
     private var eventsVOArrayList: ArrayList<EventsVO>,
     private val date: Date,
     val getResultSetSchedule: ActivityResultLauncher<Intent>
+
     )
     : RecyclerView.Adapter<ScheduleListAdapter.ViewHolder>() {
     interface OnEventsChangeListener {
@@ -87,8 +89,10 @@ class ScheduleListAdapter(
                             // 수정
                             0 -> {
                                 val intent = Intent(context, SetScheduleActivity::class.java)
+                                var db = AutoPlannerDBModule(context)
+                                val extraInfo = db.selectExtraInfoByEventId(eventsVO.id)
                                 intent.putExtra("SingleScheduleData", eventsVO)
-
+                                intent.putExtra("SingleScheduleDataExtra", extraInfo)
                                 getResultSetSchedule.launch(intent)
                             }
                             // 삭제
