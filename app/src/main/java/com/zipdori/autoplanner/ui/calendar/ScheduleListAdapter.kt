@@ -13,7 +13,7 @@ import android.widget.TextView
 import androidx.activity.result.ActivityResultLauncher
 import androidx.recyclerview.widget.RecyclerView
 import com.zipdori.autoplanner.R
-import com.zipdori.autoplanner.modules.CommonModule
+import com.zipdori.autoplanner.modules.common.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule

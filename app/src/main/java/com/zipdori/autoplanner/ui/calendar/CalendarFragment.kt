@@ -37,10 +37,11 @@ import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_CAMERA
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE_MULTIPICK
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentCalendarBinding
-import com.zipdori.autoplanner.modules.App
-import com.zipdori.autoplanner.modules.CommonModule
+import com.zipdori.autoplanner.modules.common.App
+import com.zipdori.autoplanner.modules.common.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
+import com.zipdori.autoplanner.modules.common.NameEntity
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
@@ -529,7 +530,10 @@ class CalendarFragment : Fragment(), View.OnClickListener {
 
                                         val commonModule = CommonModule(context!!)
                                         Thread {
-                                            commonModule.callNerApi(annotation["text"].asString)
+                                            val nameEntities : ArrayList<NameEntity> = commonModule.callNerApi(annotation["text"].asString)
+                                            nameEntities.forEach {
+                                                Log.i("NameEntity Info", "Text : " + it.text + ", Type : " + it.type)
+                                            }
 
                                             val intent = Intent(context, ListupSchedulecellActivity::class.java)
                                             intent.putParcelableArrayListExtra("imgURIs", imgList)

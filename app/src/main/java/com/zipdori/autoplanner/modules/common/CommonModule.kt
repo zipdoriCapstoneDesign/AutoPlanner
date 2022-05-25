@@ -1,4 +1,4 @@
-package com.zipdori.autoplanner.modules
+package com.zipdori.autoplanner.modules.common
 
 import android.content.Context
 import android.util.Log
@@ -73,9 +73,7 @@ class CommonModule(val context: Context) {
         return eventsVOArrayList
     }
 
-    inner class NameEntity(val text: String, val type: String)
-
-    fun callNerApi(text : String) {
+    fun callNerApi(text : String) : ArrayList<NameEntity> {
         // val openApiUrl = "http://aiopen.etri.re.kr:8000/WiseNLU" // 문어
         val openApiUrl = "http://aiopen.etri.re.kr:8000/WiseNLU_spoken" // 구어
 
@@ -128,7 +126,7 @@ class CommonModule(val context: Context) {
             if (responseCode != 200) {
                 // 오류 내용 출력
                 System.out.println("[error] $responseBodyJson")
-                // return
+                return arrayListOf<NameEntity>()
             }
 
             responseBody = gson.fromJson(responseBodyJson, MutableMap::class.java)
@@ -140,7 +138,7 @@ class CommonModule(val context: Context) {
             if (result != 0) {
                 // 오류 내용 출력
                 System.out.println("[error] " + responseBody.get("result"))
-                // return
+                return arrayListOf<NameEntity>()
             }
 
             // 분석 결과 활용
@@ -148,7 +146,7 @@ class CommonModule(val context: Context) {
             sentences = (returnObject["sentence"] as List<Map<*, *>?>?)!!
 
             val nameEntitiesMap: MutableMap<String, NameEntity> = HashMap<String, NameEntity>()
-            var nameEntities: MutableList<NameEntity> = mutableListOf<NameEntity>()
+            var nameEntities: ArrayList<NameEntity> = arrayListOf<NameEntity>()
 
             for (sentence in sentences) {
                 // 개체명 분석 결과 수집
@@ -166,17 +164,6 @@ class CommonModule(val context: Context) {
                 }
             }
 
-            nameEntities.forEach {
-                Log.i("NameEntity Info", "Text : " + it.text + ", Type : " + it.type)
-            }
-
-            /*
-            nameEntitiesMap.forEach {
-                Log.i("NameEntity Info", "Text : " + it.value.text + ", Type : " + it.value.type)
-            }
-
-             */
-
             /*
             // 개체명 분석 결과 빈도수로 정렬 (NameEntity 에 count 필요)
             if (0 < nameEntitiesMap.size) {
@@ -192,10 +179,13 @@ class CommonModule(val context: Context) {
 
              */
 
+            return nameEntities
+
         } catch (e: MalformedURLException) {
             e.printStackTrace()
         } catch (e: IOException) {
             e.printStackTrace()
         }
+        return arrayListOf<NameEntity>()
     }
 }

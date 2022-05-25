@@ -1,4 +1,4 @@
-package com.zipdori.autoplanner.modules
+package com.zipdori.autoplanner.modules.common
 
 import android.app.Activity
 import android.content.pm.PackageManager

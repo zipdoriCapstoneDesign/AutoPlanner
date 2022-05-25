@@ -15,7 +15,7 @@ import androidx.navigation.findNavController
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentTextInputBinding
-import com.zipdori.autoplanner.modules.CommonModule
+import com.zipdori.autoplanner.modules.common.CommonModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 
 class TextInputFragment : Fragment() {

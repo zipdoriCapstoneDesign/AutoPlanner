@@ -18,7 +18,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.google.android.material.navigation.NavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.zipdori.autoplanner.databinding.ActivityMainBinding
-import com.zipdori.autoplanner.modules.PermissionModule
+import com.zipdori.autoplanner.modules.common.PermissionModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarsVO
 
