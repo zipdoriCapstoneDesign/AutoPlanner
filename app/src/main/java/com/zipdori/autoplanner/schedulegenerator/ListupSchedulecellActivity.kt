@@ -13,7 +13,7 @@ import com.zipdori.autoplanner.Consts
 
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivityListupSchedulecellBinding
-import EventExtraInfoVO
+import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import java.util.*
 
@@ -86,12 +86,14 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
           }
 
         // TODO : 사진 여러장을 선택해도 우선은 처음 선택된 이미지로 통일. 위의 할 일과 마찬가지로 인공지능이 적용되면 맞춤형으로 코드가 바뀌어야 할 부분
-        scheduleListExtra.apply{
-            add(EventExtraInfoVO(0, 0, imgList[0]))
-            add(EventExtraInfoVO(0, 0, imgList[0]))
-            add(EventExtraInfoVO(0, 0, imgList[0]))
-            add(EventExtraInfoVO(0, 0, imgList[0]))
-            add(EventExtraInfoVO(0, 0, imgList[0]))
+        if (imgList.size != 0) {
+            scheduleListExtra.apply{
+                add(EventExtraInfoVO(0, 0, imgList[0]))
+                add(EventExtraInfoVO(0, 0, imgList[0]))
+                add(EventExtraInfoVO(0, 0, imgList[0]))
+                add(EventExtraInfoVO(0, 0, imgList[0]))
+                add(EventExtraInfoVO(0, 0, imgList[0]))
+            }
         }
 
         val scheduleListBool = BooleanArray(scheduleList.size) { true }

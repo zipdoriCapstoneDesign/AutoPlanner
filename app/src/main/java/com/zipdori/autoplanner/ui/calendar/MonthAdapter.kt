@@ -1,6 +1,6 @@
 package com.toyproject.testproject3_zipdori.ui.home
 
-import EventExtraInfoVO
+import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent

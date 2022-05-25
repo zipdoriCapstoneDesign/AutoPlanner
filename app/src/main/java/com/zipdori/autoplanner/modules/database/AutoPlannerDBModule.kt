@@ -1,13 +1,11 @@
 package com.zipdori.autoplanner.modules.database
 
-import EventExtraInfoVO
 import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.net.Uri
-import java.sql.Timestamp
 
 class AutoPlannerDBModule(context: Context?) {
     private var autoPlannerDBHelper: AutoPlannerDBHelper
@@ -93,7 +91,7 @@ class AutoPlannerDBModule(context: Context?) {
     }
 
     @SuppressLint("Range")
-    fun selectExtraInfoByEventId(eventId: Long): EventExtraInfoVO{
+    fun selectExtraInfoByEventId(eventId: Long): EventExtraInfoVO {
         val select = "select * from extra_info where event_id = $eventId"
         val cursor = db.rawQuery(select, null)
 

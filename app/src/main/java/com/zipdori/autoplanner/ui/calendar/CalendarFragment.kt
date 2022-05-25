@@ -1,6 +1,6 @@
 package com.zipdori.autoplanner.ui.calendar
 
-import EventExtraInfoVO
+import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import android.Manifest
 import android.app.Activity
 import android.app.Activity.RESULT_OK
@@ -45,7 +45,6 @@ import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
 import java.io.ByteArrayOutputStream
-import java.lang.NullPointerException
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -391,7 +390,7 @@ class CalendarFragment : Fragment(), View.OnClickListener {
         when(requestCode){
             Consts.FLAG_REQ_CAMERA ->{
                 if(resultCode == Activity.RESULT_OK) {
-                    Log.i("image uri", singleUri.toString())
+                    Log.i("Image uri", singleUri.toString())
 
                     val base64encoded = encodeImgToBase64(singleUri!!)
                     val request = makeJsonRequest(base64encoded)
@@ -440,14 +439,14 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                                     Log.e("Text recognition", "The Image has no text.")
                                 }
                             }
+
+                            val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                            var imgList = ArrayList<Uri>()
+                            imgList.add(singleUri!!)
+                            intent.putParcelableArrayListExtra("imgURIs", imgList)
+
+                            startActivity(intent)
                         }
-                    val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                    var imgList = ArrayList<Uri>()
-                    imgList.add(singleUri!!)
-                    intent.putParcelableArrayListExtra("imgURIs", imgList)
-
-                    startActivity(intent)
-
                 }
                 else
                     requireActivity().contentResolver.delete(singleUri!!,null,null)
@@ -505,8 +504,8 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                                                         var wordText = ""
                                                         for (symbol in word.asJsonObject["symbols"].asJsonArray) {
                                                             wordText += symbol.asJsonObject["text"].asString
-                                                            System.out.format("Symbol text: %s (confidence: %f)%n",
-                                                                symbol.asJsonObject["text"].asString, symbol.asJsonObject["confidence"].asFloat)
+                                                            // System.out.format("Symbol text: %s (confidence: %f)%n",
+                                                            //     symbol.asJsonObject["text"].asString, symbol.asJsonObject["confidence"].asFloat)
                                                         }
                                                         System.out.format("Word text: %s (confidence: %f)%n%n", wordText,
                                                             word.asJsonObject["confidence"].asFloat)
@@ -518,9 +517,24 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                                                     System.out.format("Paragraph Confidence: %f%n", para.asJsonObject["confidence"].asFloat)
                                                     blockText += paraText
                                                 }
+                                                System.out.format("%nBlock: %n%s%n", blockText)
+                                                System.out.format("Block bounding box: %s%n", block.asJsonObject["boundingBox"])
+                                                System.out.format("Block Confidence: %f%n", block.asJsonObject["confidence"].asFloat)
                                                 pageText += blockText
                                             }
+                                            System.out.format("%nPage: %n%s%n", pageText)
+                                            System.out.format("Page bounding box: %s%n", page.asJsonObject["boundingBox"])
+                                            System.out.format("Page Confidence: %f%n", page.asJsonObject["confidence"].asFloat)
                                         }
+
+                                        val commonModule = CommonModule(context!!)
+                                        Thread {
+                                            commonModule.callNerApi(annotation["text"].asString)
+
+                                            val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                                            intent.putParcelableArrayListExtra("imgURIs", imgList)
+                                            getResultSetSchedule.launch(intent)
+                                        }.start()
                                     } catch (e: NullPointerException) {
                                         e.printStackTrace()
                                         Log.e("Text recognition", "The Image has no text.")
@@ -528,9 +542,6 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                                 }
                             }
                     }
-                    val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                    intent.putParcelableArrayListExtra("imgURIs", imgList)
-                    getResultSetSchedule.launch(intent)
                 }
             }
         }

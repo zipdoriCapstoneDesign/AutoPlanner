@@ -1,3 +1,5 @@
+package com.zipdori.autoplanner.modules.database
+
 import android.net.Uri
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize

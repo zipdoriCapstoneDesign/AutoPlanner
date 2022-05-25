@@ -18,7 +18,7 @@
         app:layout_constraintRight_toRightOf="parent" />
 
     <EditText
-        android:id="@+id/et_text_input"
+        android:id="@+id/et_input_text_input"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:hint="내용을 입력하세요."
@@ -35,7 +35,7 @@
         app:layout_constraintRight_toRightOf="parent"/>
 
     <TextView
-        android:id="@+id/tv_guid_text_input"
+        android:id="@+id/tv_guide_text_input"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="* 메일, 공지사항을 복사해오거나\n일정을 적당히 말로 풀어 써보세요!"
@@ -44,7 +44,7 @@
         android:layout_marginTop="20dp"
         android:layout_marginLeft="25dp"
         android:layout_marginRight="25dp"
-        app:layout_constraintTop_toBottomOf="@id/et_text_input"
+        app:layout_constraintTop_toBottomOf="@id/et_input_text_input"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 
@@ -54,7 +54,7 @@
         android:layout_height="wrap_content"
         android:text="확인"
         android:layout_marginTop="30dp"
-        app:layout_constraintTop_toBottomOf="@id/tv_guid_text_input"
+        app:layout_constraintTop_toBottomOf="@id/tv_guide_text_input"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent" />
 

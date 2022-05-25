@@ -29,7 +29,7 @@ import androidx.fragment.app.FragmentActivity
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.ActivitySetScheduleBinding
-import EventExtraInfoVO
+import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calMdForm
 import com.zipdori.autoplanner.schedulegenerator.DateForm.Companion.calYearForm

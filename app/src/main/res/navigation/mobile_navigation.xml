@@ -19,7 +19,11 @@
         android:id="@+id/nav_text_input"
         android:name="com.zipdori.autoplanner.ui.textinput.TextInputFragment"
         android:label="@string/menu_text_input"
-        tools:layout="@layout/fragment_text_input" />
+        tools:layout="@layout/fragment_text_input" >
+        <action
+            android:id="@+id/action_nav_text_input_to_nav_calendar"
+            app:destination="@id/nav_calendar" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_trash_can"

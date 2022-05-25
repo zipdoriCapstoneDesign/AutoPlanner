@@ -20,7 +20,7 @@ import java.util.*
 import android.widget.LinearLayout
 
 
-import EventExtraInfoVO
+import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 
 class ScheduleCellAdapter(val context: Context, val saveIntent: ActivityResultLauncher<Intent>) :
     RecyclerView.Adapter<ScheduleCellAdapter.ViewHolder>() {
