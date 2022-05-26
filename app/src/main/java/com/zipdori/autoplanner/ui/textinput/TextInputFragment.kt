@@ -1,6 +1,7 @@
 package com.zipdori.autoplanner.ui.textinput
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,7 +16,9 @@ import androidx.navigation.findNavController
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentTextInputBinding
+import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.common.CommonModule
+import com.zipdori.autoplanner.modules.common.NameEntity
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 
 class TextInputFragment : Fragment() {
@@ -58,11 +61,15 @@ class TextInputFragment : Fragment() {
             val text = etInput.text.toString()
 
             Thread {
-                commonModule.callNerApi(text)
+                // TODO: 2022-05-27 정규표현식 사용하여 실제 일정등록
+                val nameEntities : ArrayList<NameEntity> = commonModule.callNerApi(text)
 
-                // TODO: 2022-05-25 정규표현식 적용 후 일정감지 
+                val imgList: ArrayList<Uri> = arrayListOf<Uri>()
+                val eventList: ArrayList<EventsVO> = arrayListOf<EventsVO>()
+
                 val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                // intent.putParcelableArrayListExtra("imgURIs", imgList)
+                intent.putParcelableArrayListExtra("imgURIs", imgList)
+                intent.putParcelableArrayListExtra("events", eventList)
                 getResultSetSchedule.launch(intent)
 
 

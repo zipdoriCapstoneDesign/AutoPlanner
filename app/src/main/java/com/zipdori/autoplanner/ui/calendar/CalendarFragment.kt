@@ -1,6 +1,5 @@
 package com.zipdori.autoplanner.ui.calendar
 
-import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import android.Manifest
 import android.app.Activity
 import android.app.Activity.RESULT_OK
@@ -13,6 +12,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.util.Log
 import android.view.*
@@ -37,15 +38,19 @@ import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_CAMERA
 import com.zipdori.autoplanner.Consts.Companion.FLAG_PERM_STORAGE_MULTIPICK
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentCalendarBinding
-import com.zipdori.autoplanner.modules.common.App
-import com.zipdori.autoplanner.modules.common.CommonModule
 import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
+import com.zipdori.autoplanner.modules.common.App
+import com.zipdori.autoplanner.modules.common.CommonModule
 import com.zipdori.autoplanner.modules.common.NameEntity
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
+import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
-import com.zipdori.autoplanner.schedulegenerator.dateparser.DateParser
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -454,8 +459,8 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                     requireActivity().contentResolver.delete(singleUri!!,null,null)
             }
             Consts.GET_GALLERY_IMAGE_MULTI->{
-                var imgList = ArrayList<Uri>()
-                imgList.clear()
+                var imgTextMap = mutableMapOf<Uri, String>()
+                imgTextMap.clear()
                 if(data?.clipData != null){
                     val count = data.clipData!!.itemCount
                     Log.e("선택한 사진 수",count.toString())
@@ -465,91 +470,140 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                     }
                     for (i in 0 until count) {
                         val imageUri = data.clipData!!.getItemAt(i).uri
-                        imgList.add(imageUri)
+                        imgTextMap[imageUri] = ""
                         Log.e("imgList에 넣는 주소", imageUri.toString())
                     }
                 } else { // 단일 선택
                     data?.data?.let { uri ->
                         val imageUri : Uri? = data?.data
                         if (imageUri != null) {
-                            imgList.add(imageUri)
+                            imgTextMap[imageUri] = ""
                         }
                     }
                 }
 
-                // TODO: 2022-05-11 인식된 글자들을 통한 일정 예측
-                if(imgList.isNotEmpty()) {
-                    for (imgUri in imgList) {
-                        val base64encoded = encodeImgToBase64(imgUri)
-                        val request = makeJsonRequest(base64encoded)
+                if(imgTextMap.isNotEmpty()) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        for (img in imgTextMap) {
+                            val base64encoded = encodeImgToBase64(img.key)
+                            val request = makeJsonRequest(base64encoded)
 
-                        annotateImage(request.toString())
-                            .addOnCompleteListener { task ->
-                                if (!task.isSuccessful) {
-                                    Log.e("text recognition", "failed")
+                            val tempTask = annotateImage(request.toString())
+                                .addOnCompleteListener { task ->
+                                    if (!task.isSuccessful) {
+                                        Log.e("text recognition", "failed")
+                                    } else {
+                                        Log.i("text recognition", "success")
 
-                                } else {
-                                    Log.i("text recognition", "success")
+                                        try {
+                                            val annotation = task.result!!.asJsonArray[0].asJsonObject["fullTextAnnotation"].asJsonObject
+                                            System.out.format("%nComplete annotation:")
+                                            System.out.format("%n%s", annotation["text"].asString)
+                                            imgTextMap[img.key] = annotation["text"].asString
 
-                                    try {
-                                        val annotation = task.result!!.asJsonArray[0].asJsonObject["fullTextAnnotation"].asJsonObject
-                                        System.out.format("%nComplete annotation:")
-                                        System.out.format("%n%s", annotation["text"].asString)
-
-                                        for (page in annotation["pages"].asJsonArray) {
-                                            var pageText = ""
-                                            for (block in page.asJsonObject["blocks"].asJsonArray) {
-                                                var blockText = ""
-                                                for (para in block.asJsonObject["paragraphs"].asJsonArray) {
-                                                    var paraText = ""
-                                                    for (word in para.asJsonObject["words"].asJsonArray) {
-                                                        var wordText = ""
-                                                        for (symbol in word.asJsonObject["symbols"].asJsonArray) {
-                                                            wordText += symbol.asJsonObject["text"].asString
-                                                            // System.out.format("Symbol text: %s (confidence: %f)%n",
-                                                            //     symbol.asJsonObject["text"].asString, symbol.asJsonObject["confidence"].asFloat)
+                                            /*
+                                            // word, paragraph, block 확인용
+                                            for (page in annotation["pages"].asJsonArray) {
+                                                var pageText = ""
+                                                for (block in page.asJsonObject["blocks"].asJsonArray) {
+                                                    var blockText = ""
+                                                    for (para in block.asJsonObject["paragraphs"].asJsonArray) {
+                                                        var paraText = ""
+                                                        for (word in para.asJsonObject["words"].asJsonArray) {
+                                                            var wordText = ""
+                                                            for (symbol in word.asJsonObject["symbols"].asJsonArray) {
+                                                                wordText += symbol.asJsonObject["text"].asString
+                                                                // System.out.format("Symbol text: %s (confidence: %f)%n",
+                                                                //     symbol.asJsonObject["text"].asString, symbol.asJsonObject["confidence"].asFloat)
+                                                            }
+                                                            System.out.format("Word text: %s (confidence: %f)%n%n", wordText,
+                                                                word.asJsonObject["confidence"].asFloat)
+                                                            System.out.format("Word bounding box: %s%n", word.asJsonObject["boundingBox"])
+                                                            paraText = String.format("%s%s ", paraText, wordText)
                                                         }
-                                                        System.out.format("Word text: %s (confidence: %f)%n%n", wordText,
-                                                            word.asJsonObject["confidence"].asFloat)
-                                                        System.out.format("Word bounding box: %s%n", word.asJsonObject["boundingBox"])
-                                                        paraText = String.format("%s%s ", paraText, wordText)
+                                                        System.out.format("%nParagraph: %n%s%n", paraText)
+                                                        System.out.format("Paragraph bounding box: %s%n", para.asJsonObject["boundingBox"])
+                                                        System.out.format("Paragraph Confidence: %f%n", para.asJsonObject["confidence"].asFloat)
+                                                        blockText += paraText
                                                     }
-                                                    System.out.format("%nParagraph: %n%s%n", paraText)
-                                                    System.out.format("Paragraph bounding box: %s%n", para.asJsonObject["boundingBox"])
-                                                    System.out.format("Paragraph Confidence: %f%n", para.asJsonObject["confidence"].asFloat)
-                                                    blockText += paraText
+                                                    System.out.format("%nBlock: %n%s%n", blockText)
+                                                    System.out.format("Block bounding box: %s%n", block.asJsonObject["boundingBox"])
+                                                    System.out.format("Block Confidence: %f%n", block.asJsonObject["confidence"].asFloat)
+                                                    pageText += blockText
                                                 }
-                                                System.out.format("%nBlock: %n%s%n", blockText)
-                                                System.out.format("Block bounding box: %s%n", block.asJsonObject["boundingBox"])
-                                                System.out.format("Block Confidence: %f%n", block.asJsonObject["confidence"].asFloat)
-                                                pageText += blockText
+                                                System.out.format("%nPage: %n%s%n", pageText)
+                                                System.out.format("Page bounding box: %s%n", page.asJsonObject["boundingBox"])
+                                                System.out.format("Page Confidence: %f%n", page.asJsonObject["confidence"].asFloat)
                                             }
-                                            System.out.format("%nPage: %n%s%n", pageText)
-                                            System.out.format("Page bounding box: %s%n", page.asJsonObject["boundingBox"])
-                                            System.out.format("Page Confidence: %f%n", page.asJsonObject["confidence"].asFloat)
+                                             */
+                                        } catch (e: NullPointerException) {
+                                            e.printStackTrace()
+                                            Log.e("Text recognition", "The Image has no text.")
                                         }
+                                    }
+                                }.await()
+                        }
 
-                                        val commonModule = CommonModule(context!!)
-                                        Thread {
-                                            val nameEntities : ArrayList<NameEntity> = commonModule.callNerApi(annotation["text"].asString)
-                                            nameEntities.forEach {
-                                                Log.i("NameEntity Info", "Text : " + it.text + ", Type : " + it.type)
-                                            }
-                                            val parser = DateParser()
-                                            parser.setSource(nameEntities)
-                                            parser.setUri(imgUri)
-                                            parser.extractAsDate()
-                                            val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                                            intent.putParcelableArrayListExtra("imgURIs", imgList)
-                                            intent.putParcelableArrayListExtra("events", parser.events)
-                                            getResultSetSchedule.launch(intent)
-                                        }.start()
-                                    } catch (e: NullPointerException) {
-                                        e.printStackTrace()
-                                        Log.e("Text recognition", "The Image has no text.")
+                        /*
+                        imgTextMap.forEach {
+                            Log.i("URI", it.key.toString())
+                            Log.i("STRING", it.value)
+                        }
+
+                         */
+
+                        Thread {
+                            val imgEntitiesMap: MutableMap<Uri, ArrayList<NameEntity>> = mutableMapOf<Uri, ArrayList<NameEntity>>()
+                            imgTextMap.forEach {
+                                val nameEntity: ArrayList<NameEntity> = commonModule.callNerApi(it.value)
+                                if (nameEntity.isNotEmpty()) {
+                                    imgEntitiesMap[it.key] = nameEntity
+
+                                    Log.i("Uri", it.key.toString())
+                                    nameEntity.forEach {
+                                        Log.i("NameEntity", "TEXT : " + it.text + ", TYPE : " + it.type)
                                     }
                                 }
                             }
+
+                            if (imgEntitiesMap.isEmpty()) {
+                                val handler: Handler = Handler(Looper.getMainLooper())
+                                handler.postDelayed(kotlinx.coroutines.Runnable {
+                                    Toast.makeText(context, "감지된 일정이 없습니다.", Toast.LENGTH_SHORT).show()
+                                }, 0)
+                            } else {
+                                // TODO: 2022-05-27 정규표현식 사용하여 실제 일정등록
+                                /*
+                                val parser = DateParser()
+                                parser.setSource(nameEntities)
+                                parser.setUri(imgUri)
+                                parser.extractAsDate()
+                                val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                                intent.putParcelableArrayListExtra("imgURIs", imgList)
+                                intent.putParcelableArrayListExtra("events", parser.events)
+                                getResultSetSchedule.launch(intent)
+
+                                 */
+
+                                val imgList: ArrayList<Uri> = arrayListOf<Uri>()
+                                val eventList: ArrayList<EventsVO> = arrayListOf<EventsVO>()
+                                imgEntitiesMap.forEach {
+                                    imgList.add(it.key)
+
+                                    val sharedPreferences: SharedPreferences = context!!.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+                                    val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
+
+                                    eventList.add(EventsVO(0, calendarId,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+                                }
+
+                                val intent = Intent(context, ListupSchedulecellActivity::class.java)
+                                intent.putParcelableArrayListExtra("imgURIs", imgList)
+                                intent.putParcelableArrayListExtra("events", eventList)
+                                getResultSetSchedule.launch(intent)
+
+                            }
+
+                        }.start()
                     }
                 }
             }

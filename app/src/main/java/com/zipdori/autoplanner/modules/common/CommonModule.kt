@@ -1,7 +1,6 @@
 package com.zipdori.autoplanner.modules.common
 
 import android.content.Context
-import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.zipdori.autoplanner.BuildConfig
@@ -119,8 +118,6 @@ class CommonModule(val context: Context) {
             }
 
             responseBodyJson = sb.toString()
-            // TODO: 2022-05-25 delete 
-            Log.i("responseBodyJson", responseBodyJson)
 
             // http 요청 오류 시 처리
             if (responseCode != 200) {

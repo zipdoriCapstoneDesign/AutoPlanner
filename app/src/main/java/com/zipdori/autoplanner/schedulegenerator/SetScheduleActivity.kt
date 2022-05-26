@@ -274,7 +274,7 @@ class SetScheduleActivity : AppCompatActivity(), View.OnClickListener {
         // 캘린더에서 날짜 클릭할 때마다 호출되는 함수
         calForSet.setOnDateChangeListener { calendarView, year, month, day ->
             tempCal!!.set(year, month, day)
-            Toast.makeText(this, "$month.$day", Toast.LENGTH_SHORT).show()
+            // Toast.makeText(this, "$month.$day", Toast.LENGTH_SHORT).show()
         }
 
         // 연월일 설정하는 버튼으로 연 캘린더 다이얼로그의 등록/취소 버튼
