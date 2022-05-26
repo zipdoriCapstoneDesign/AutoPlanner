@@ -45,6 +45,7 @@ import com.zipdori.autoplanner.modules.common.NameEntity
 import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
+import com.zipdori.autoplanner.schedulegenerator.dateparser.DateParser
 import java.io.ByteArrayOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -111,149 +112,149 @@ class CalendarFragment : Fragment(), View.OnClickListener {
 
         getResultSetSchedule = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
-                if (result.resultCode == RESULT_OK) {
-                    val tempEventsVO: EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
-                    val tempEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
-                    val sharedPreferences: SharedPreferences =
-                        requireActivity().getSharedPreferences(
-                            getString(R.string.preference_file_key),
-                            Context.MODE_PRIVATE
-                        )
-                    val calendarId =
-                        sharedPreferences.getLong(getString(R.string.calendar_index), 0)
-                    val id = tempEventsVO.id
-                    val title = tempEventsVO.title
-                    val eventLocation = tempEventsVO.eventLocation
-                    val description = tempEventsVO.description
-                    val eventColor = tempEventsVO.eventColor
-                    val dtStart = tempEventsVO.dtStart
-                    val dtEnd = tempEventsVO.dtEnd!!
-                    val duration = tempEventsVO.duration
-                    val allDay = tempEventsVO.allDay
-                    val rRule = tempEventsVO.rRule
-                    val rDate = tempEventsVO.rDate
+            if (result.resultCode == RESULT_OK) {
+                val tempEventsVO: EventsVO = result.data?.getParcelableExtra("scheduleItem")!!
+                val tempEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
+                val sharedPreferences: SharedPreferences =
+                    requireActivity().getSharedPreferences(
+                        getString(R.string.preference_file_key),
+                        Context.MODE_PRIVATE
+                    )
+                val calendarId =
+                    sharedPreferences.getLong(getString(R.string.calendar_index), 0)
+                val id = tempEventsVO.id
+                val title = tempEventsVO.title
+                val eventLocation = tempEventsVO.eventLocation
+                val description = tempEventsVO.description
+                val eventColor = tempEventsVO.eventColor
+                val dtStart = tempEventsVO.dtStart
+                val dtEnd = tempEventsVO.dtEnd!!
+                val duration = tempEventsVO.duration
+                val allDay = tempEventsVO.allDay
+                val rRule = tempEventsVO.rRule
+                val rDate = tempEventsVO.rDate
+                val eventTimeZone = "UTC"
+
+                // id가 -1이면 새로운 Event를 추가하는 것으로 간주
+                val calendarProviderModule =
+                    CalendarProviderModule(requireActivity().applicationContext)
+                if (id.equals((-1).toLong())) {
+                    val eventId = calendarProviderModule.insertEvent(
+                        calendarId,
+                        title,
+                        eventLocation,
+                        description,
+                        eventColor,
+                        dtStart,
+                        dtEnd,
+                        eventTimeZone,
+                        duration,
+                        allDay,
+                        rRule,
+                        rDate
+                    )
+                    tempEventExtraVO.event_id = eventId
+                    autoPlannerDBModule.insertExtraInfo(tempEventExtraVO.event_id,tempEventExtraVO.photo.toString())
+                } else {
+                    calendarProviderModule.updateEvent(
+                        id,
+                        title,
+                        eventLocation,
+                        description,
+                        eventColor,
+                        dtStart,
+                        dtEnd,
+                        eventTimeZone,
+                        duration,
+                        allDay,
+                        rRule,
+                        rDate
+                    )
+                    autoPlannerDBModule.updateExtraInfo(tempEventExtraVO._id, tempEventExtraVO.event_id, tempEventExtraVO.photo.toString())
+                }
+
+                val schedules: HashMap<String, ArrayList<EventsVO>> = commonModule.getAllEventsAsHashmap()
+                for (monthAdapter in monthAdapterArrayList) {
+                    monthAdapter.schedules = schedules
+                    if (monthAdapter.scheduleListAdapter != null) {
+                        val date: Date = monthAdapter.scheduleListAdapter!!.getDate()
+                        var tempEventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(date))
+                        if (tempEventsVOArrayList == null) {
+                            tempEventsVOArrayList = ArrayList()
+                        }
+                        monthAdapter.scheduleListAdapter!!.setEventsVOArrayList(tempEventsVOArrayList)
+                        monthAdapter.scheduleListAdapter!!.notifyDataSetChanged()
+                    }
+                }
+
+                // TODO: 2022-04-06 더 효율적인 방법 구상해보기
+                val calendar: Calendar = Calendar.getInstance()
+                calendar.timeInMillis = tempEventsVO.dtStart
+                drawCalendar()
+                setViewPager2Position(calendar, false)
+            }
+            else if (result.resultCode == Consts.RESULT_SCHEDULELIST_REG) { // 스케줄리스트 액티비티에서 체크한 일정들이 넘어오는 곳
+                val tempEventList: ArrayList<EventsVO> =
+                    result.data?.getParcelableArrayListExtra("checkedList")!!
+                val tempEventListExtraVO: ArrayList<EventExtraInfoVO> =
+                    result.data?.getParcelableArrayListExtra("checkedListExtra")!!
+
+                val sharedPreferences: SharedPreferences =
+                    requireActivity().getSharedPreferences(
+                        getString(R.string.preference_file_key),
+                        Context.MODE_PRIVATE
+                    )
+                val calendarId =
+                    sharedPreferences.getLong(getString(R.string.calendar_index), 0)
+                val calendarProviderModule =
+                    CalendarProviderModule(requireActivity().applicationContext)
+
+                val it = tempEventList.iterator()
+                val itExtra = tempEventListExtraVO.iterator()
+                while (it.hasNext()) {
+                    // 체크했던 이벤트를 캘린더에 넣는 작업
+                    // 일단 체크한 일정은 모두 넣지만, 나중에 일정 중복 감지 기능을 고려할 여지가 있음
+                    val tempEvent = it.next()
+                    val tempEventExtra = itExtra.next()
+                    val id = tempEvent.id
+                    val title = tempEvent.title
+                    val eventLocation = tempEvent.eventLocation
+                    val description = tempEvent.description
+                    val eventColor = tempEvent.eventColor
+                    val dtStart = tempEvent.dtStart
+                    val dtEnd = tempEvent.dtEnd!!
+                    val duration = tempEvent.duration
+                    val allDay = tempEvent.allDay
+                    val rRule = tempEvent.rRule
+                    val rDate = tempEvent.rDate
                     val eventTimeZone = "UTC"
 
-                    // id가 -1이면 새로운 Event를 추가하는 것으로 간주
-                    val calendarProviderModule =
-                        CalendarProviderModule(requireActivity().applicationContext)
-                    if (id.equals((-1).toLong())) {
-                        val eventId = calendarProviderModule.insertEvent(
-                            calendarId,
-                            title,
-                            eventLocation,
-                            description,
-                            eventColor,
-                            dtStart,
-                            dtEnd,
-                            eventTimeZone,
-                            duration,
-                            allDay,
-                            rRule,
-                            rDate
-                        )
-                        tempEventExtraVO.event_id = eventId
-                        autoPlannerDBModule.insertExtraInfo(tempEventExtraVO.event_id,tempEventExtraVO.photo.toString())
-                    } else {
-                        calendarProviderModule.updateEvent(
-                            id,
-                            title,
-                            eventLocation,
-                            description,
-                            eventColor,
-                            dtStart,
-                            dtEnd,
-                            eventTimeZone,
-                            duration,
-                            allDay,
-                            rRule,
-                            rDate
-                        )
-                        autoPlannerDBModule.updateExtraInfo(tempEventExtraVO._id, tempEventExtraVO.event_id, tempEventExtraVO.photo.toString())
-                    }
+                    val eventId = calendarProviderModule.insertEvent(
+                        calendarId,
+                        title,
+                        eventLocation,
+                        description,
+                        eventColor,
+                        dtStart,
+                        dtEnd,
+                        eventTimeZone,
+                        duration,
+                        allDay,
+                        rRule,
+                        rDate
+                    )
+                    tempEventExtra.event_id = eventId
 
-                    val schedules: HashMap<String, ArrayList<EventsVO>> = commonModule.getAllEventsAsHashmap()
-                    for (monthAdapter in monthAdapterArrayList) {
-                        monthAdapter.schedules = schedules
-                        if (monthAdapter.scheduleListAdapter != null) {
-                            val date: Date = monthAdapter.scheduleListAdapter!!.getDate()
-                            var tempEventsVOArrayList: ArrayList<EventsVO>? = schedules.get(SimpleDateFormat("yyyy.MM.dd", Locale.US).format(date))
-                            if (tempEventsVOArrayList == null) {
-                                tempEventsVOArrayList = ArrayList()
-                            }
-                            monthAdapter.scheduleListAdapter!!.setEventsVOArrayList(tempEventsVOArrayList)
-                            monthAdapter.scheduleListAdapter!!.notifyDataSetChanged()
-                        }
-                    }
-
-                    // TODO: 2022-04-06 더 효율적인 방법 구상해보기
-                    val calendar: Calendar = Calendar.getInstance()
-                    calendar.timeInMillis = tempEventsVO.dtStart
-                    drawCalendar()
-                    setViewPager2Position(calendar, false)
+                    Log.e("들어온 인덱스",id.toString())
+                    Log.e("들어온 사진uri",tempEventExtra.photo.toString())
+                    autoPlannerDBModule.insertExtraInfo(tempEventExtra.event_id,tempEventExtra.photo.toString())
                 }
-                else if (result.resultCode == Consts.RESULT_SCHEDULELIST_REG) { // 스케줄리스트 액티비티에서 체크한 일정들이 넘어오는 곳
-                    val tempEventList: ArrayList<EventsVO> =
-                        result.data?.getParcelableArrayListExtra("checkedList")!!
-                    val tempEventListExtraVO: ArrayList<EventExtraInfoVO> =
-                        result.data?.getParcelableArrayListExtra("checkedListExtra")!!
 
-                    val sharedPreferences: SharedPreferences =
-                        requireActivity().getSharedPreferences(
-                            getString(R.string.preference_file_key),
-                            Context.MODE_PRIVATE
-                        )
-                    val calendarId =
-                        sharedPreferences.getLong(getString(R.string.calendar_index), 0)
-                    val calendarProviderModule =
-                        CalendarProviderModule(requireActivity().applicationContext)
+                // 확인용 : DB 확인하고 초기화
+                autoPlannerDBModule.selectAllExtraInfo()
+                autoPlannerDBModule.initExtraInfo()
 
-                    val it = tempEventList.iterator()
-                    val itExtra = tempEventListExtraVO.iterator()
-                    while (it.hasNext()) {
-                        // 체크했던 이벤트를 캘린더에 넣는 작업
-                        // 일단 체크한 일정은 모두 넣지만, 나중에 일정 중복 감지 기능을 고려할 여지가 있음
-                        val tempEvent = it.next()
-                        val tempEventExtra = itExtra.next()
-                        val id = tempEvent.id
-                        val title = tempEvent.title
-                        val eventLocation = tempEvent.eventLocation
-                        val description = tempEvent.description
-                        val eventColor = tempEvent.eventColor
-                        val dtStart = tempEvent.dtStart
-                        val dtEnd = tempEvent.dtEnd!!
-                        val duration = tempEvent.duration
-                        val allDay = tempEvent.allDay
-                        val rRule = tempEvent.rRule
-                        val rDate = tempEvent.rDate
-                        val eventTimeZone = "UTC"
-
-                        val eventId = calendarProviderModule.insertEvent(
-                            calendarId,
-                            title,
-                            eventLocation,
-                            description,
-                            eventColor,
-                            dtStart,
-                            dtEnd,
-                            eventTimeZone,
-                            duration,
-                            allDay,
-                            rRule,
-                            rDate
-                        )
-                        tempEventExtra.event_id = eventId
-
-                        Log.e("들어온 인덱스",id.toString())
-                        Log.e("들어온 사진uri",tempEventExtra.photo.toString())
-                        autoPlannerDBModule.insertExtraInfo(tempEventExtra.event_id,tempEventExtra.photo.toString())
-                    }
-
-                    // 확인용 : DB 확인하고 초기화
-                    autoPlannerDBModule.selectAllExtraInfo()
-                    autoPlannerDBModule.initExtraInfo()
-
-                }
+            }
         }
 
         fabAI.setOnClickListener(this)
@@ -292,10 +293,10 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                 setViewPager2CurMonth(true)
             }
         }
-        
+
         return super.onOptionsItemSelected(item)
     }
-    
+
     private fun setViewPager2CurMonth(smoothScroll: Boolean) {
         val calendar: Calendar = Calendar.getInstance()
         val monthDiff = (calendar.get(Calendar.YEAR) - 1902) * 12 + calendar.get(Calendar.MONTH)
@@ -534,9 +535,13 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                                             nameEntities.forEach {
                                                 Log.i("NameEntity Info", "Text : " + it.text + ", Type : " + it.type)
                                             }
-
+                                            val parser = DateParser()
+                                            parser.setSource(nameEntities)
+                                            parser.setUri(imgUri)
+                                            parser.extractAsDate()
                                             val intent = Intent(context, ListupSchedulecellActivity::class.java)
                                             intent.putParcelableArrayListExtra("imgURIs", imgList)
+                                            intent.putParcelableArrayListExtra("events", parser.events)
                                             getResultSetSchedule.launch(intent)
                                         }.start()
                                     } catch (e: NullPointerException) {

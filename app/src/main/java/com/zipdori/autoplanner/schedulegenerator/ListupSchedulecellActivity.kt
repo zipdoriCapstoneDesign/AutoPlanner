@@ -21,7 +21,7 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
 
     private lateinit var binding: ActivityListupSchedulecellBinding
     lateinit var scheduleCellAdaptor:ScheduleCellAdapter
-    val scheduleList = mutableListOf<EventsVO>()
+    var scheduleList = mutableListOf<EventsVO>()
     var scheduleListExtra = mutableListOf<EventExtraInfoVO>()
 
     var imgList = ArrayList<Uri>()
@@ -43,6 +43,7 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
             Log.e("Uri 확인", i.toString())
         }
 
+        scheduleList = intent.getParcelableArrayListExtra("events")!!
         initRecycler()
 
         binding.scRegButton.setOnClickListener(this)
@@ -77,13 +78,14 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
         val d2Format = DateForm.integratedForm.format(t2Date)
 
         // TODO : 인공지능으로 일정들을 받을 수 있게 되면 없앨 부분
-        scheduleList.apply {
-            add(EventsVO(0,1,null,"회의",null,null, Color.parseColor("#111111"),Color.parseColor("#111111"),System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(1,1,null,"약 먹을 시간",null,null,-10572033,Color.parseColor("#876946"),System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(2,1,null,"외출",null,null,-10572033,Color.parseColor("#F8FF41"),System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(3,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-            add(EventsVO(4,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
-          }
+//        scheduleList.apply {
+//            add(EventsVO(0,1,null,"회의",null,null, Color.parseColor("#111111"),Color.parseColor("#111111"),System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+//            add(EventsVO(1,1,null,"약 먹을 시간",null,null,-10572033,Color.parseColor("#876946"),System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+//            add(EventsVO(2,1,null,"외출",null,null,-10572033,Color.parseColor("#F8FF41"),System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+//            add(EventsVO(3,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+//            add(EventsVO(4,1,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+//          }
+
 
         // TODO : 사진 여러장을 선택해도 우선은 처음 선택된 이미지로 통일. 위의 할 일과 마찬가지로 인공지능이 적용되면 맞춤형으로 코드가 바뀌어야 할 부분
         if (imgList.size != 0) {
