@@ -47,6 +47,7 @@ import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
 import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 import com.zipdori.autoplanner.schedulegenerator.SetScheduleActivity
+import com.zipdori.autoplanner.schedulegenerator.dateparser.DateParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -573,34 +574,22 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                                 }, 0)
                             } else {
                                 // TODO: 2022-05-27 정규표현식 사용하여 실제 일정등록
-                                /*
-                                val parser = DateParser()
-                                parser.setSource(nameEntities)
-                                parser.setUri(imgUri)
-                                parser.extractAsDate()
-                                val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                                intent.putParcelableArrayListExtra("imgURIs", imgList)
-                                intent.putParcelableArrayListExtra("events", parser.events)
-                                getResultSetSchedule.launch(intent)
-
-                                 */
-
-                                val imgList: ArrayList<Uri> = arrayListOf<Uri>()
-                                val eventList: ArrayList<EventsVO> = arrayListOf<EventsVO>()
+                                val parser = DateParser(context!!)
                                 imgEntitiesMap.forEach {
-                                    imgList.add(it.key)
-
-                                    val sharedPreferences: SharedPreferences = context!!.getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE)
-                                    val calendarId = sharedPreferences.getLong(getString(R.string.calendar_index), 0)
-
-                                    eventList.add(EventsVO(0, calendarId,null,"외출",null,null,-10572033,null,System.currentTimeMillis(),System.currentTimeMillis()+60000,"Asia/Seoul",null,null,null,null,null,null,null))
+                                    parser.setSource(it.value)
+                                    parser.setUri(it.key)
+                                    parser.extractAsDate()
                                 }
 
+                                val calendar = Calendar.getInstance()
+                                parser.events.forEach {
+                                    calendar.timeInMillis = it.dtStart
+                                    Log.i("Event Title", SimpleDateFormat("yyyy.MM.dd").format(calendar.time))
+                                }
                                 val intent = Intent(context, ListupSchedulecellActivity::class.java)
-                                intent.putParcelableArrayListExtra("imgURIs", imgList)
-                                intent.putParcelableArrayListExtra("events", eventList)
+                                intent.putParcelableArrayListExtra("imgURIs", parser.imgUris)
+                                intent.putParcelableArrayListExtra("events", parser.events)
                                 getResultSetSchedule.launch(intent)
-
                             }
 
                         }.start()

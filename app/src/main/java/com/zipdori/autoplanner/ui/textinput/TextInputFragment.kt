@@ -20,6 +20,8 @@ import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.common.CommonModule
 import com.zipdori.autoplanner.modules.common.NameEntity
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
+import java.util.*
+import kotlin.collections.ArrayList
 
 class TextInputFragment : Fragment() {
 
@@ -75,6 +77,11 @@ class TextInputFragment : Fragment() {
 
             }.start()
         }
+        val calendar: Calendar = Calendar.getInstance()
+        calendar.get(Calendar.HOUR)
+        calendar.set(Calendar.HOUR, 23)
+
+        calendar.set(Calendar.HOUR, calendar.get(Calendar.HOUR) + 2)
 
         return root
     }

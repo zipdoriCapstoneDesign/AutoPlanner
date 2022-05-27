@@ -1,26 +1,29 @@
 package com.zipdori.autoplanner.schedulegenerator.dateparser
 
 import TaggedWord
+import Tags
+import android.content.Context
+import android.content.SharedPreferences
+import android.graphics.Color
 import android.net.Uri
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.common.NameEntity
-import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import com.zipdori.autoplanner.schedulegenerator.DateForm
-import tools.StringPositionRecorder
-
 import scheduleItem.ItemDate
 import scheduleItem.ItemSchedule
 import scheduleItem.ItemSide
 import scheduleItem.ItemTime
+import tools.StringPositionRecorder
 import tools.TypeOfRegex
 import tools.TypeOfRegex.Companion.ymd
 import java.util.*
-import kotlin.collections.ArrayList
+import com.zipdori.autoplanner.R
+import java.util.concurrent.ThreadLocalRandom
 
-class DateParser() {
+class DateParser(val context: Context) {
     var sources:ArrayList<NameEntity>? = null
     var events:ArrayList<EventsVO> = arrayListOf()
-    var eventsExtra:ArrayList<EventExtraInfoVO> =arrayListOf()
+    var imgUris: ArrayList<Uri> = arrayListOf<Uri>()
     var curUri: Uri? = null
 
     fun setSource(s:ArrayList<NameEntity>){
@@ -76,8 +79,9 @@ class DateParser() {
         // 일정과 시간 모두 모였다고 가정하고 어떻게 처리할지?
         // 3. 일정 사이드부터 수집. dt리스트는 itemDateList, ti리스트는 itemTimeList
         println("---------------3단계--------------")
-        val randomItemTimeSingle = ItemTime(16,0,13..13)
-        itemTimeList.add(randomItemTimeSingle)  // 처리할 시간이 있다고 임의로 만들어서 가정
+        // TODO: 2022-05-27 시간 관련코드 완성시 수정
+        // val randomItemTimeSingle = ItemTime(16,0,13..13)
+        // itemTimeList.add(randomItemTimeSingle)  // 처리할 시간이 있다고 임의로 만들어서 가정
 
         val itemSideList:MutableList<ItemSide> = mutableListOf()
 
@@ -146,7 +150,7 @@ class DateParser() {
         }
         for (e in eventList){
             events.add(e)
-            eventsExtra.add(EventExtraInfoVO(0,0,curUri))
+            imgUris.add(curUri!!)
         }
         return eventList
     }
@@ -228,7 +232,23 @@ class DateParser() {
 
             val fromMillis = convertSideToMillis(itemSch.from)
             var toMillis:Long = if (itemSch.to == null) fromMillis+60000*60 else convertSideToMillis(itemSch.to!!)
-            val eventTemp = EventsVO(0,1,null,"제목을 정해주세요",null,null, 1,1,fromMillis,toMillis,"Asia/Seoul",null,null,null,null,null,null,null)
+
+            val colors: ArrayList<String> = ArrayList()
+
+            colors.add("#5EAEFF")
+            colors.add("#82B926")
+            colors.add("#a276eb")
+            colors.add("#6a3ab2")
+            colors.add("#666666")
+            colors.add("#FFFF00")
+            colors.add("#3C8D2F")
+            colors.add("#FA9F00")
+            colors.add("#FF0000")
+
+            val sharedPreferences: SharedPreferences = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE)
+            val calendarId = sharedPreferences.getLong(context.getString(R.string.calendar_index), 0)
+            val eventTemp = EventsVO(0,calendarId,null,"제목을 정해주세요",null,null, -10572033,
+                Color.parseColor(colors.get(ThreadLocalRandom.current().nextInt(1, 9))),fromMillis,toMillis,"Asia/Seoul",null,null,null,null,null,null,null)
             eventList.add(eventTemp)
         }
 
