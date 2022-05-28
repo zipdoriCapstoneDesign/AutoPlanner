@@ -326,6 +326,9 @@ class DateParser(val context: Context) {
             "DT_DAY" -> return Tags.DT_DAY
             "DT_OTHERS" -> return Tags.DT_OTHERS
             "DT_DURATION" -> return Tags.DT_DURATION
+            "QT_OTHERS" -> return Tags.DT_OTHERS
+            "QT_ORDER" -> return Tags.DT_OTHERS
+            "QT_PERCENTAGE" -> return Tags.DT_OTHERS
 
             "TI_DURATION" -> return Tags.TI_DURATION
         }

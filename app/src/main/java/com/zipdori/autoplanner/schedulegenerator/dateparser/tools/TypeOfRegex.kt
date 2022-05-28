@@ -11,6 +11,6 @@ class TypeOfRegex {
         const val dateRegistReverse = ".*\\d?\\d?\\d\\d[./년]\\s?\\d?\\d[./월]\\s?\\d?\\d.*"
         val extNum = Regex("\\D")
         val ymd = Regex("\\D*(\\d*[\\./년\\s])?\\s?(\\d*[\\./월\\s])?\\s?(\\d+)[^-~]?")
-
+        val isNum = Regex("\\d")
     }
 }
