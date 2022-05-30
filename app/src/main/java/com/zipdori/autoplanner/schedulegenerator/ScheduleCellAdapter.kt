@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -72,6 +73,7 @@ class ScheduleCellAdapter(val context: Context, val saveIntent: ActivityResultLa
                 val intent = Intent(context, SetScheduleActivity::class.java)
                 intent.putExtra("SingleScheduleData", item)
                 intent.putExtra("SingleScheduleDataExtra", scheduleListExtra[adapterPosition])
+                Log.e("아웃인덱스", "${scheduleListExtra.size} <> $adapterPosition")
                 saveIntent.launch(intent)
             }
             eventRegCheck.setOnClickListener{

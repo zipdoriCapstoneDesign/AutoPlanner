@@ -18,6 +18,7 @@ import com.zipdori.autoplanner.databinding.ActivityListupSchedulecellBinding
 import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import java.util.*
+import kotlin.collections.ArrayList
 
 class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
 
@@ -46,6 +47,13 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
         }
 
         scheduleList = intent.getParcelableArrayListExtra("events")!!
+        val uriList:ArrayList<Uri> = intent.getParcelableArrayListExtra("imgURIs")!!
+
+        for(uri in uriList){
+            scheduleListExtra.add(EventExtraInfoVO(0,0,uri))
+        }
+
+        //scheduleListExtra = intent.getParcelableArrayListExtra("imgURIs")!!
         initRecycler()
 
         binding.scRegButton.setOnClickListener(this)
@@ -61,6 +69,7 @@ class ListupSchedulecellActivity : AppCompatActivity() , View.OnClickListener {
                         val modifiedEvent:EventsVO? = result.data?.getParcelableExtra("scheduleItem")
                         val modifiedEventExtraVO: EventExtraInfoVO = result.data?.getParcelableExtra("scheduleItemExtra")!!
                         val modifiedEventIdx = modifiedEvent!!.id.toInt() //여기서 이벤트ID를 리스트의 인덱스로 사용중. 나중에 프로바이더에 insert될 때 어차피 새로 정해지는 id
+
                         scheduleList[modifiedEventIdx] = modifiedEvent
                         scheduleListExtra[modifiedEventIdx] = modifiedEventExtraVO
                         scheduleCellAdaptor.notifyItemChanged(modifiedEventIdx)
