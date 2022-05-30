@@ -573,12 +573,23 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                                     Toast.makeText(context, "감지된 일정이 없습니다.", Toast.LENGTH_SHORT).show()
                                 }, 0)
                             } else {
+                                val colors: ArrayList<String> = ArrayList()
+
+                                colors.add("#5EAEFF")
+                                colors.add("#82B926")
+                                colors.add("#a276eb")
+                                // colors.add("#FFFF00")
+                                colors.add("#FA9F00")
+                                colors.add("#FF0000")
+
                                 // TODO: 2022-05-27 정규표현식 사용하여 실제 일정등록
                                 val parser = DateParser(context!!)
+                                var colorIdx = 0
                                 imgEntitiesMap.forEach {
                                     parser.setSource(it.value)
                                     parser.setUri(it.key)
-                                    parser.extractAsDate()
+                                    parser.extractAsDate(colors[colorIdx])
+                                    colorIdx += 1
                                 }
 
                                 val calendar = Calendar.getInstance()

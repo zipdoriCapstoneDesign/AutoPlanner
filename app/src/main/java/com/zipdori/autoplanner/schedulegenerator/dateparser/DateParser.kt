@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
+import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.common.NameEntity
 import com.zipdori.autoplanner.schedulegenerator.DateForm
@@ -17,8 +18,6 @@ import tools.StringPositionRecorder
 import tools.TypeOfRegex
 import tools.TypeOfRegex.Companion.ymd
 import java.util.*
-import com.zipdori.autoplanner.R
-import java.util.concurrent.ThreadLocalRandom
 
 class DateParser(val context: Context) {
     var sources:ArrayList<NameEntity>? = null
@@ -33,7 +32,7 @@ class DateParser(val context: Context) {
         curUri=uri
     }
 
-    fun extractAsDate(): MutableList<EventsVO> {
+    fun extractAsDate(color: String): MutableList<EventsVO> {
         val taggedWords:MutableList<TaggedWord> = mutableListOf()
         for (i in sources!!.indices){
             val currentTag:Int = convertTagStringToInt(sources!![i].type)
@@ -111,6 +110,7 @@ class DateParser(val context: Context) {
 
         // 4. itemSideList에서 ItemSide끼리 시작과 종료 날짜로 관련됐는지, 각기 무관한 일정인지 출신 인덱스 범위로 분석해서 일정 아이템화(작업중)
         val scheduleList:MutableList<ItemSchedule> = mutableListOf()
+        val titleList: ArrayList<String> = arrayListOf<String>()
         var tempSchedule: ItemSchedule? = null
         var prevRangeStart = 0
         var prevRangeEnd = 0
@@ -123,20 +123,26 @@ class DateParser(val context: Context) {
                     tempSchedule.to = item
                     tempSchedule.range = tempSchedule.range.first..item.range.last
                     scheduleList.add(tempSchedule)
+                    titleList.add(findTitle(tempSchedule!!.range.first, tempSchedule.range.last))
                     tempSchedule = null
                 }
                 else{
                     scheduleList.add(tempSchedule)
+                    titleList.add(findTitle(tempSchedule!!.range.first, tempSchedule.range.last))
                     tempSchedule = ItemSchedule(item, null, item.range)
                 }
             }
             prevRangeStart = item.range.first
             prevRangeEnd = item.range.last
         }
-        if(tempSchedule!=null) scheduleList.add(tempSchedule)
+        if(tempSchedule!=null) {
+            scheduleList.add(tempSchedule)
+            titleList.add(findTitle(tempSchedule.range.first, tempSchedule.range.last))
+        }
         println(scheduleList)
+        println(titleList)
 
-        val eventList:MutableList<EventsVO> = convertListScheduleToEvent(scheduleList)
+        val eventList:MutableList<EventsVO> = convertListScheduleToEvent(scheduleList, titleList, color)
 
         println("----------------------------event----------------------------")
         for(event in eventList){
@@ -224,31 +230,23 @@ class DateParser(val context: Context) {
         return cal.timeInMillis
     }
 
-    private fun convertListScheduleToEvent(scheduleList: MutableList<ItemSchedule>): MutableList<EventsVO> {
+    private fun convertListScheduleToEvent(scheduleList: MutableList<ItemSchedule>, titleList: ArrayList<String>, color: String): MutableList<EventsVO> {
         val eventList:MutableList<EventsVO> = mutableListOf()
 
-        for(itemSch in scheduleList){
-            fillNullDefaultItemSchedule(itemSch)
+        for(i in 0 until scheduleList.size){
+            fillNullDefaultItemSchedule(scheduleList[i])
 
-            val fromMillis = convertSideToMillis(itemSch.from)
-            var toMillis:Long = if (itemSch.to == null) fromMillis+60000*60 else convertSideToMillis(itemSch.to!!)
+            val fromMillis = convertSideToMillis(scheduleList[i].from)
+            var toMillis:Long = if (scheduleList[i].to == null) fromMillis+60000*60 else convertSideToMillis(scheduleList[i].to!!)
 
-            val colors: ArrayList<String> = ArrayList()
-
-            colors.add("#5EAEFF")
-            colors.add("#82B926")
-            colors.add("#a276eb")
-            colors.add("#6a3ab2")
-            colors.add("#666666")
-            colors.add("#FFFF00")
-            colors.add("#3C8D2F")
-            colors.add("#FA9F00")
-            colors.add("#FF0000")
-
+            var title = "제목을 정해주세요"
+            if (titleList[i] != "") {
+                title = titleList[i]
+            }
             val sharedPreferences: SharedPreferences = context.getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE)
             val calendarId = sharedPreferences.getLong(context.getString(R.string.calendar_index), 0)
-            val eventTemp = EventsVO(0,calendarId,null,"제목을 정해주세요",null,null, -10572033,
-                Color.parseColor(colors.get(ThreadLocalRandom.current().nextInt(1, 9))),fromMillis,toMillis,"Asia/Seoul",null,null,null,null,null,null,null)
+            val eventTemp = EventsVO(0,calendarId,null,title,null,null, -10572033,
+                Color.parseColor(color),fromMillis,toMillis,"Asia/Seoul",null,null,null,null,null,null,null)
             eventList.add(eventTemp)
         }
 
@@ -337,5 +335,48 @@ class DateParser(val context: Context) {
     private fun isTagDT(tag: Int): Boolean {
         if(tag in 1..5) return true
         return false
+    }
+
+    private fun findTitle(first: Int, last: Int): String {
+        var eventTitle = ""
+        val titleTags: ArrayList<String> = arrayListOf("EV", "LC", "PS", "OG")
+        for (tag in titleTags) {
+            var tagAssigned = false
+
+            for (i in first..last) {
+                if (Regex(tag).find(sources!![i].type) != null) {
+                    eventTitle += sources!![i].text + " "
+
+                    tagAssigned = true
+                    break
+                }
+            }
+
+            if (!tagAssigned) {
+                for (i in 1..sources!!.size) {
+                    var tempIdx = first - i
+                    if (tempIdx >= 0) {
+                        if (Regex(tag).find(sources!![tempIdx].type) != null) {
+                            eventTitle += sources!![tempIdx].text + " "
+
+                            tagAssigned = true
+                            break
+                        }
+                    }
+
+                    tempIdx = last + i
+                    if (tempIdx < sources!!.size) {
+                        if (Regex(tag).find(sources!![tempIdx].type) != null) {
+                            eventTitle += sources!![tempIdx].text + " "
+
+                            tagAssigned = true
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+        return eventTitle.trim()
     }
 }
