@@ -1,5 +1,6 @@
 package com.zipdori.autoplanner.schedulegenerator.dateparser
 
+import ProcessTime
 import TaggedWord
 import Tags
 import android.content.Context
@@ -36,9 +37,28 @@ class DateParser(val context: Context) {
 
     fun extractAsDate(color: String): MutableList<EventsVO> {
         val taggedWords:MutableList<TaggedWord> = mutableListOf()
+        val itemDateList:MutableList<ItemDate> = mutableListOf()
+        val itemTimeList:MutableList<ItemTime> = mutableListOf()
+
+        val PT = ProcessTime()
+        var timeObjects: MutableList<ItemTime>? = null
+
         for (i in sources!!.indices){
             val currentTag:Int = convertTagStringToInt(sources!![i].type)
             taggedWords.add(TaggedWord(sources!![i].text, currentTag))
+
+            //시간은 여기서 아이템화
+            if(Regex("^TI").find(sources!![i].type) != null)
+                timeObjects = PT.sepTime(sources!![i].text, sources!![i].type)
+
+            if(timeObjects == null) continue
+
+            for (j in timeObjects) {
+                j.range = i..i
+            }
+            println("TimeOb : $timeObjects")
+            itemTimeList.addAll(timeObjects)
+            timeObjects.clear()
         }
         // 1. DT 태그가 연속해서 출현하면 붙여서 저장. StringPositionRecorder 리스트 사용
         println("---------------1단계--------------")
@@ -47,8 +67,6 @@ class DateParser(val context: Context) {
 
         // 2. DT 태그를 연결시켜 재정리한 결과물인 StringPositionRecorder를 정규표현식으로 분석해서 ItemDate에 넘겨줌
         println("---------------2단계--------------")
-        val itemDateList:MutableList<ItemDate> = mutableListOf()
-        val itemTimeList:MutableList<ItemTime> = mutableListOf()
         val cal = Calendar.getInstance()
         val today = cal.get(Calendar.DAY_OF_MONTH)
         for(i in rangedWordBox){
@@ -124,7 +142,7 @@ class DateParser(val context: Context) {
                 tempSchedule = ItemSchedule(item, null, item.range)
             }
             else{
-                if(item.range.first - prevRangeEnd <2 && item.range.first >= prevRangeStart){
+                if(item.range.first - prevRangeEnd <= 2 && item.range.first >= prevRangeStart){
                     tempSchedule.to = item
                     tempSchedule.range = tempSchedule.range.first..item.range.last
                     scheduleList.add(tempSchedule)
