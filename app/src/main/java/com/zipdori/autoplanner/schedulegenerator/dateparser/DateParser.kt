@@ -14,6 +14,8 @@ import scheduleItem.ItemDate
 import scheduleItem.ItemSchedule
 import scheduleItem.ItemSide
 import scheduleItem.ItemTime
+import tools.PromisedExpressionSet
+import tools.PromisedTags
 import tools.StringPositionRecorder
 import tools.TypeOfRegex
 import tools.TypeOfRegex.Companion.ymd
@@ -84,6 +86,9 @@ class DateParser(val context: Context) {
 
         val itemSideList:MutableList<ItemSide> = mutableListOf()
 
+        // 예약 시간(3일후, 5시간 뒤 등) 처리 함수. ItemDate나 ItemSide를 만듬
+        parseItemSideFromDateReservation(taggedWords, itemDateList, itemSideList)
+
         // 일자와 인접한 시간은 일자와 묶어서 itemSide로 들어감
         for(dateItem in itemDateList){
             val sideItem = ItemSide(dateItem,range=dateItem.range!!)
@@ -105,7 +110,7 @@ class DateParser(val context: Context) {
                 itemSideList.add(ItemSide(null,timeItem,timeItem.range!!))
             }
         }
-
+        itemSideList.sortBy { it.range.first }
         println(itemSideList)
 
         // 4. itemSideList에서 ItemSide끼리 시작과 종료 날짜로 관련됐는지, 각기 무관한 일정인지 출신 인덱스 범위로 분석해서 일정 아이템화(작업중)
@@ -161,6 +166,83 @@ class DateParser(val context: Context) {
         return eventList
     }
 
+    private fun parseItemSideFromDateReservation(reservationWords: MutableList<TaggedWord>, itemDateList:MutableList<ItemDate>, itemSideList: MutableList<ItemSide>) {
+        var idx:Int = -1
+        for (word in reservationWords){
+            idx++
+            if(word.tag!=Tags.DTI_RESERVATION) continue
+            println("[[$word]]")
+            val cal = Calendar.getInstance()
+
+            println("${cal.get(Calendar.HOUR_OF_DAY)} : ${cal.get(Calendar.MINUTE)}")
+            val seperatedPromised:ArrayList<PromisedExpressionSet> = dividePromisedSentence(word.word)
+            var isTimeReservationDetected = false
+            // TODO : cal에 예약일정 추가
+            for (p in seperatedPromised){
+                println("p : ${p.expression}")
+                when(p.roleTag){
+                    PromisedTags.YEAR -> cal.add(Calendar.YEAR, p.amount)
+                    PromisedTags.MONTH -> cal.add(Calendar.MONTH, p.amount)
+                    PromisedTags.DAY -> cal.add(Calendar.DAY_OF_MONTH, p.amount)
+                    PromisedTags.HOUR -> {
+                        isTimeReservationDetected = true
+                        cal.add(Calendar.HOUR, p.amount)
+                    }
+                    PromisedTags.MINUTE -> {
+                        isTimeReservationDetected = true
+                        cal.add(Calendar.MINUTE, p.amount)
+                    }
+                }
+            }
+
+            println("${cal.get(Calendar.HOUR_OF_DAY)} : ${cal.get(Calendar.MINUTE)}")
+
+            val curDate = ItemDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH)+1, cal.get(Calendar.DAY_OF_MONTH), idx..idx)
+            if(!isTimeReservationDetected) {        //예약일정이 날짜만 다루고 시간까지 안 다루면 ItemDate 리스트에 넣고 스킵
+                println(curDate)
+                itemDateList.add(curDate)
+                continue
+            }
+
+            val curTime = ItemTime(cal.get(Calendar.HOUR), cal.get(Calendar.MONTH))
+            itemSideList.add(ItemSide(curDate, curTime, idx..idx))
+        }
+    }
+
+    private fun dividePromisedSentence(word: String): ArrayList<PromisedExpressionSet> {
+        val temp:ArrayList<String> = arrayListOf()
+        val frag = StringBuilder()
+        var prevIsNumber = false
+        var result:ArrayList<PromisedExpressionSet> = arrayListOf()
+
+        // 문자였다가 숫자가 되는 순간을 나눠서 저장
+        for(i in word.indices){
+            if(i==0) {
+                frag.append(word[i])
+                prevIsNumber = TypeOfRegex.isNum.find(word[i].toString()) != null
+                continue
+            }
+            if(!prevIsNumber && TypeOfRegex.isNum.find(word[i].toString()) != null){
+                temp.add(frag.toString())
+                frag.setLength(0)
+            }
+            frag.append(word[i])
+            prevIsNumber = TypeOfRegex.isNum.find(word[i].toString()) != null
+        }
+        temp.add(frag.toString())
+
+        //TODO : 숫자와 문자를 분리해 PES 에 저장하고 PES 분석 돌려서 리스트에 넣어 리턴
+        for (i in temp){
+            val ps = PromisedExpressionSet()
+            ps.amount = i.replace("\\D".toRegex(), "").toInt()
+            ps.expression = i.replace("\\d".toRegex(), "")
+            ps.decodeRole()
+            result.add(ps)
+        }
+
+
+        return result
+    }
     private fun fillNullDefaultItemSchedule(itemSch: ItemSchedule) {
         fillNullDefaultItemSide(itemSch.from)
         if(itemSch.to != null) {
@@ -253,9 +335,18 @@ class DateParser(val context: Context) {
         return eventList
     }
 
+    private fun detectedKorButDate(value: String): Boolean {
+        println("한글확인 + $value")
+        val findKor = Regex("년|월").find(value)
+        if(findKor != null) {
+            Regex("일").find(value) ?: return false
+        }
+        return true
+    }
     private fun parseDateByRegex(i:StringPositionRecorder, resultRegexDate: MatchResult): ItemDate? {
         // 날짜 정보가 들어있으면 ItemDate로 가공
         val itemDate = ItemDate()
+        if(!detectedKorButDate(resultRegexDate.value)) return null
         var (n1, n2, n3) = resultRegexDate.destructured
         var num1 = n1.replace(TypeOfRegex.extNum, "")
         var num2 = n2.replace(TypeOfRegex.extNum, "")
