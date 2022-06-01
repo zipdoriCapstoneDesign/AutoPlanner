@@ -98,9 +98,6 @@ class DateParser(val context: Context) {
         // 일정과 시간 모두 모였다고 가정하고 어떻게 처리할지?
         // 3. 일정 사이드부터 수집. dt리스트는 itemDateList, ti리스트는 itemTimeList
         println("---------------3단계--------------")
-        // TODO: 2022-05-27 시간 관련코드 완성시 수정
-        // val randomItemTimeSingle = ItemTime(16,0,13..13)
-        // itemTimeList.add(randomItemTimeSingle)  // 처리할 시간이 있다고 임의로 만들어서 가정
 
         val itemSideList:MutableList<ItemSide> = mutableListOf()
 
@@ -319,8 +316,12 @@ class DateParser(val context: Context) {
         val month = side.itemDate!!.month!!-1
         val day = side.itemDate!!.day!!
         if(side.itemTime != null) {
-            val hour = side.itemTime!!.hour!!
-            val minute = side.itemTime!!.minute!!
+            var hour = 9
+            var minute = 0
+            if (side.itemTime!!.hour != null)
+                hour = side.itemTime!!.hour!!
+            if (side.itemTime!!.minute != null)
+                minute = side.itemTime!!.minute!!
 
             println("::$year, $month,$day,$hour,$minute")
             cal.set(year, month, day, hour, minute)
@@ -421,6 +422,7 @@ class DateParser(val context: Context) {
                 temp.str.append(item.word)
             }
         }
+        if(temp != null) wordPacks.add(temp)
         println(wordPacks)
         return(wordPacks)
     }
