@@ -42,6 +42,7 @@ class DateParser(val context: Context) {
 
         val PT = ProcessTime()
         var timeObjects: MutableList<ItemTime>? = null
+        defaultYear = Calendar.getInstance().get(Calendar.YEAR)
 
         for (i in sources!!.indices){
             val currentTag:Int = convertTagStringToInt(sources!![i].type)
