@@ -27,7 +27,7 @@ class DateParser(val context: Context) {
     var events:ArrayList<EventsVO> = arrayListOf()
     var imgUris: ArrayList<Uri> = arrayListOf<Uri>()
     var curUri: Uri? = null
-
+    var defaultYear = Calendar.getInstance().get(Calendar.YEAR)
     fun setSource(s:ArrayList<NameEntity>){
         sources=s
     }
@@ -103,7 +103,7 @@ class DateParser(val context: Context) {
 
         // 예약 시간(3일후, 5시간 뒤 등) 처리 함수. ItemDate나 ItemSide를 만듬
         parseItemSideFromDateReservation(taggedWords, itemDateList, itemSideList)
-
+        setDefaultYear(itemDateList)
         // 일자와 인접한 시간은 일자와 묶어서 itemSide로 들어감
         for(dateItem in itemDateList){
             val sideItem = ItemSide(dateItem,range=dateItem.range!!)
@@ -179,6 +179,17 @@ class DateParser(val context: Context) {
             imgUris.add(curUri!!)
         }
         return eventList
+    }
+
+    private fun setDefaultYear(itemDateList: MutableList<ItemDate>){
+        val cal = Calendar.getInstance()
+        var fixYear = cal.get(Calendar.YEAR)
+
+        for(item in itemDateList){
+            if(item.year!=null) fixYear = item.year!!
+            else item.year=fixYear
+        }
+        defaultYear=fixYear
     }
 
     private fun parseItemSideFromDateReservation(reservationWords: MutableList<TaggedWord>, itemDateList:MutableList<ItemDate>, itemSideList: MutableList<ItemSide>) {
@@ -297,10 +308,10 @@ class DateParser(val context: Context) {
 
         var finishedDate = itemDate
         if(finishedDate == null){
-            finishedDate = ItemDate(curYear, curMonth, curDay)
+            finishedDate = ItemDate(defaultYear, curMonth, curDay)
         }
         else{
-            if(finishedDate.year == null) finishedDate.year = curYear
+            if(finishedDate.year == null) finishedDate.year = defaultYear
             if(finishedDate.month == null)finishedDate.month = curMonth
             if(finishedDate.day == null) finishedDate.day = curDay
         }
@@ -420,6 +431,13 @@ class DateParser(val context: Context) {
             else {
                 if(temp == null) temp = StringPositionRecorder(startIndex = index)
                 temp.str.append(item.word)
+                println(temp.str)
+                if(currentTag == Tags.DT_DURATION) {
+                    temp.endIndex = index
+                    wordPacks.add(temp)
+
+                    temp = null
+                }
             }
         }
         if(temp != null) wordPacks.add(temp)
