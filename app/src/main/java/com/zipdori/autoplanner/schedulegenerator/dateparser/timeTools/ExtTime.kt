@@ -23,6 +23,11 @@ class ExtTime {
         else if (type.uppercase() == "LATER") {
 
         }
+        else {
+            if (0 <= timeObject.hour!! && timeObject.hour!! <= 6) {
+                timeObject.hour = timeObject.hour!! + 12
+            }
+        }
 
         return timeObject
     }
@@ -49,6 +54,11 @@ class ExtTime {
         else if (type.uppercase() == "LATER") {
 
         }
+        else {
+            if (0 <= timeObject.hour!! && timeObject.hour!! <= 6) {
+                timeObject.hour = timeObject.hour!! + 12
+            }
+        }
 
         return timeObject
     }
@@ -69,6 +79,11 @@ class ExtTime {
         }
         else if (type.uppercase() == "LATER") {
 
+        }
+        else {
+            if (0 <= timeObject.hour!! && timeObject.hour!! <= 6) {
+                timeObject.hour = timeObject.hour!! + 12
+            }
         }
 
         return timeObject
