@@ -384,6 +384,9 @@ class DateParser(val context: Context) {
         var num3 = n3.replace(TypeOfRegex.extNum, "")
         println("num1 = $num1, num2 = $num2, num3 = $num3")
 
+        if(n1.length>num1.length  && TypeOfRegex.notDateDivider.find(n1[num1.length].toString()) != null) return null
+        if(n2.length>num2.length  && TypeOfRegex.notDateDivider.find(n2[num2.length].toString())!= null) return null
+        if(n3.length>num3.length  && TypeOfRegex.notDateDivider.find(n3[num3.length].toString())!= null) return null
         // divider가 다르면 앞에것만 취함
         if(num1.isNotEmpty() && num2.isNotEmpty()) {
             if (n1[num1.length] != '년' && n1[num1.length] != n2[num2.length]) {
@@ -407,6 +410,7 @@ class DateParser(val context: Context) {
         println(itemDate)
 
         if(itemDate.year!=null) {
+            if(itemDate.year!! <100) itemDate.year = itemDate.year!! + 2000
             if (itemDate.year!! < 2000 || itemDate.year!!>2200)
                 return null
         }

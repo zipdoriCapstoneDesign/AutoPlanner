@@ -5,7 +5,7 @@ class TypeOfRegex {
         const val num = "^\\d+$"
         const val duration = "~|부터"
         const val candidateDivider = ".|/|-"
-        const val dateDividerKor = "년|월|일"
+        val notDateDivider = Regex("[^년월일./-~]")
         const val endCommitmentFinder = "내일|모레|글피|어제|그제"
 
         const val dateRegistReverse = ".*\\d?\\d?\\d\\d[./년]\\s?\\d?\\d[./월]\\s?\\d?\\d.*"
