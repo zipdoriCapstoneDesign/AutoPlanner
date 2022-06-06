@@ -1,7 +1,9 @@
 package com.zipdori.autoplanner.ui.textinput
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -21,9 +23,12 @@ import androidx.navigation.findNavController
 import com.zipdori.autoplanner.Consts
 import com.zipdori.autoplanner.R
 import com.zipdori.autoplanner.databinding.FragmentTextInputBinding
+import com.zipdori.autoplanner.modules.calendarprovider.CalendarProviderModule
 import com.zipdori.autoplanner.modules.calendarprovider.EventsVO
 import com.zipdori.autoplanner.modules.common.CommonModule
 import com.zipdori.autoplanner.modules.common.NameEntity
+import com.zipdori.autoplanner.modules.database.AutoPlannerDBModule
+import com.zipdori.autoplanner.modules.database.EventExtraInfoVO
 import com.zipdori.autoplanner.schedulegenerator.ListupSchedulecellActivity
 import com.zipdori.autoplanner.schedulegenerator.dateparser.DateParser
 import java.util.*
@@ -43,6 +48,8 @@ class TextInputFragment : Fragment() {
 
     private lateinit var getResultSetSchedule: ActivityResultLauncher<Intent>
 
+    private lateinit var autoPlannerDBModule: AutoPlannerDBModule
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -57,9 +64,71 @@ class TextInputFragment : Fragment() {
         etInput = binding.etInputTextInput
         btnOK = binding.btOkTextInput
 
+        autoPlannerDBModule = AutoPlannerDBModule(context)
+
         getResultSetSchedule = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Consts.RESULT_SCHEDULELIST_REG) {
+                val tempEventList: ArrayList<EventsVO> =
+                    result.data?.getParcelableArrayListExtra("checkedList")!!
+                val tempEventListExtraVO: ArrayList<EventExtraInfoVO> =
+                    result.data?.getParcelableArrayListExtra("checkedListExtra")!!
+
+                val sharedPreferences: SharedPreferences =
+                    requireActivity().getSharedPreferences(
+                        getString(R.string.preference_file_key),
+                        Context.MODE_PRIVATE
+                    )
+                val calendarId =
+                    sharedPreferences.getLong(getString(R.string.calendar_index), 0)
+                val calendarProviderModule =
+                    CalendarProviderModule(requireActivity().applicationContext)
+
+                val it = tempEventList.iterator()
+                val itExtra = tempEventListExtraVO.iterator()
+                while (it.hasNext()) {
+                    // 체크했던 이벤트를 캘린더에 넣는 작업
+                    // 일단 체크한 일정은 모두 넣지만, 나중에 일정 중복 감지 기능을 고려할 여지가 있음
+                    val tempEvent = it.next()
+                    val tempEventExtra = itExtra.next()
+                    val id = tempEvent.id
+                    val title = tempEvent.title
+                    val eventLocation = tempEvent.eventLocation
+                    val description = tempEvent.description
+                    val eventColor = tempEvent.eventColor
+                    val dtStart = tempEvent.dtStart
+                    val dtEnd = tempEvent.dtEnd!!
+                    val duration = tempEvent.duration
+                    val allDay = tempEvent.allDay
+                    val rRule = tempEvent.rRule
+                    val rDate = tempEvent.rDate
+                    val eventTimeZone = "UTC"
+
+                    val eventId = calendarProviderModule.insertEvent(
+                        calendarId,
+                        title,
+                        eventLocation,
+                        description,
+                        eventColor,
+                        dtStart,
+                        dtEnd,
+                        eventTimeZone,
+                        duration,
+                        allDay,
+                        rRule,
+                        rDate
+                    )
+                    tempEventExtra.event_id = eventId
+
+                    Log.e("들어온 인덱스",id.toString())
+                    Log.e("들어온 사진uri",tempEventExtra.photo.toString())
+                    autoPlannerDBModule.insertExtraInfo(tempEventExtra.event_id,tempEventExtra.photo.toString())
+                }
+
+                // 확인용 : DB 확인하고 초기화
+                autoPlannerDBModule.selectAllExtraInfo()
+                autoPlannerDBModule.initExtraInfo()
+
                 view!!.findNavController().navigate(R.id.action_nav_text_input_to_nav_calendar)
             }
         }
@@ -112,8 +181,6 @@ class TextInputFragment : Fragment() {
                     getResultSetSchedule.launch(intent)
                 }
             }.start()
-
-            view!!.findNavController().navigate(R.id.action_nav_text_input_to_nav_calendar)
         }
         val calendar: Calendar = Calendar.getInstance()
         calendar.get(Calendar.HOUR)

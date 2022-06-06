@@ -30,10 +30,11 @@
             <TextView
                 android:id="@+id/schedule_cell_title"
                 android:layout_width="match_parent"
-                android:layout_height="29dp"
+                android:layout_height="wrap_content"
                 android:text="일정 제목"
                 android:textSize="20sp"
                 android:textColor="#000000"
+                android:lines="2"
                 android:layout_gravity="center_vertical"/>
             <TextView
                 android:id="@+id/schedule_cell_period"

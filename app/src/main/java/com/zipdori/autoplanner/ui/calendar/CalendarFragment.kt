@@ -732,6 +732,27 @@ class CalendarFragment : Fragment(), View.OnClickListener {
                         colors.add("#FA9F00")
                         colors.add("#FF0000")
 
+                        colors.add("#5EAEFF")
+                        colors.add("#82B926")
+                        colors.add("#a276eb")
+                        // colors.add("#FFFF00")
+                        colors.add("#FA9F00")
+                        colors.add("#FF0000")
+
+                        colors.add("#5EAEFF")
+                        colors.add("#82B926")
+                        colors.add("#a276eb")
+                        // colors.add("#FFFF00")
+                        colors.add("#FA9F00")
+                        colors.add("#FF0000")
+
+                        colors.add("#5EAEFF")
+                        colors.add("#82B926")
+                        colors.add("#a276eb")
+                        // colors.add("#FFFF00")
+                        colors.add("#FA9F00")
+                        colors.add("#FF0000")
+
                         val parser = DateParser(context!!)
                         var colorIdx = 0
                         imgEntitiesMap.forEach {
